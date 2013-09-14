@@ -1,6 +1,5 @@
 #include "rasterlinetiming.h"
 #include "types.h"
-#include <stdio.h>
 
 rastertiming_s rasterline_bad[63][2] = {
 
