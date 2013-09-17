@@ -20,7 +20,7 @@ VICbgColour:
 */
 .globl drawPixelOctet
 drawPixelOctet:
-        push {r4,lr}
+        push {r4,r5,lr}
         px .req r0
         py .req r1
         octet .req r2
@@ -38,27 +38,29 @@ drawPixelOctet:
         add addr, px,lsl #1     ;@ addr = addr + px*2  I guess...
         .unreq px
 
-        color .req r3
+        forecolor .req r3
         bit .req r0
         mask .req r1
-
+	bgcolor .req r5
+	
+	ldr forecolor,=VICforeColour
+	ldrh forecolor,[forecolor]
+	ldr bgcolor,=VICbgColour
+	ldrh bgcolor,[bgcolor]
         mov mask,#0b10000000
 octloop$:
         tst octet,mask
-        ldreq color,=VICbgColour
-        ldrhi color,=VICforeColour
-        ldrh color,[color]
-        strh color,[addr]
-
+        streqh bgcolor,[addr]
+	strneh forecolor,[addr]
         add addr, #2
         mov mask, mask, lsr #1
-
         cmp mask,#0b00000000
         bne octloop$
 
-        .unreq color
+        .unreq forecolor
+	.unreq bgcolor
         .unreq addr
         .unreq octet
         .unreq bit
-        pop {r4,pc}
+        pop {r4,r5,pc}
 
