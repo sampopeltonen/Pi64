@@ -80,10 +80,10 @@ byte VMLI=0; // video matrix line index
 
 byte frame=0;
 
-void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int pixel) {
+void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
 	x-=120;
 	VICbgColour[0] = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
-	VICforeColour[0] = pixel;
+	VICforeColour[0] = foreColor;
 	drawPixelOctet(x,y,data);
 }
 
@@ -262,6 +262,7 @@ void vicCycle() {
 	// G-ACCESS
 	if(rasterline_bad[currentRLcycle][0].busUsage==RLBG) {
 		if(FLAG_STATE==STATE_DISPLAY) {
+			// TODO: get real foreColor
 			drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemReadByte(vicGetGAddress(VML[VMLI])), colors[14]);
 
 			// VC and VMLI are incremented after each g-access in display state.
@@ -302,15 +303,6 @@ void vic6569_init() {
 		// TODO: what are the real initial values?
 		vicRegisters[i] = 0;
 	}
-	
-	/*
-	if(SDL_Init(SDL_INIT_VIDEO)!=0) {
-		printf("Failed to init SDL video");
-		exit(1);
-	}
-
-	initGraphs(PIX_PER_LINE + MONITOR_GRAPHICS_WIDTH, RASTER_LINES);
-	*/
 
 	// VIC-II colors as described in http://www.pepto.de/projects/colorvic/
 	colors[0]  =  drawRGB24toRGB565(0x00, 0x00, 0x00);
@@ -459,7 +451,6 @@ unsigned int add_one ( unsigned int add, unsigned int flags )
 
 int vicmain(void) {
 	start_l1cache();
-	/*
 	//printf("Starting MMU...");    	
 	for(nextfree=0;nextfree<TOP_LEVEL_WORDS;nextfree++) PUT32(MMUTABLEBASE+(nextfree<<2),0);
     	//ram used by the stack and the program
@@ -471,10 +462,15 @@ int vicmain(void) {
     	if(add_one(0x20100000,0x0000)) exit(1);
     	if(add_one(0x20200000,0x0000)) exit(1);
 
+	// framebuffer area, not cached
+    	if(add_one(0x48000000,0x0000)) exit(1);
+    	if(add_one(0x48100000,0x0000)) exit(1);
+    	if(add_one(0x48200000,0x0000)) exit(1);
+	
+
 	// #ifdef DCACHE
     	start_mmu(MMUTABLEBASE,0x00800005);
 	//printf("MMU started");
-	//*/
 	
 	//setupScreen(1024,768,16);
 	setupScreen(640,480,16);

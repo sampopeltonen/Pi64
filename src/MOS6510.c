@@ -316,7 +316,7 @@ void mneBIT(int am, int cycles) {
 	(t==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
 	((t & B7)==B7) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 	((t & B8)==B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
-	//setZeroAndNegativePFlags(&t);  this is bullshit
+	//setZeroAndNegativePFlags(&t);  this is not true
 }
 
 void mneBMI(int am, int cycles) {
@@ -1195,18 +1195,12 @@ void mos6510_HWInterrupt() {
 
 /*
 int main(void) {
-
 	initMnemonicArray();
 	loadROM();
-
 	//word loadAddress = loadTestProgram();
 	//memWriteByte(0x8000, loadAddress); // 0x8000 cardridge jump point
 	//memWriteByte(0x8001, (loadAddress >> 8));
-
 	reset();
-
 	mainLoop();
-
-
 	return EXIT_SUCCESS;
 }*/
