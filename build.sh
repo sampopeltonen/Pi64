@@ -2,7 +2,7 @@
 
 rm obj/*.o
 
-CC_OPTS="-nostdlib -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -O2"
+CC_OPTS="-Wall -nostdlib -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -O2"
 
 arm-none-eabi-as src/bootstrap.s -o obj/bootstrap.o
 

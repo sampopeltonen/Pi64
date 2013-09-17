@@ -40,26 +40,26 @@ void outputBuffer(unsigned int len) {
 }
 
 // TODO: stdlib replacement stuff
-int printf(const char * string) {
+void printf(const char * string) {
         unsigned int len = FormatString(string, slen(string), stringBuf);
 	outputBuffer(len);
 }
 
-int printf1(const char * string, int a1) {
+void printf1(const char * string, int a1) {
         unsigned int len = FormatString(string, slen(string), stringBuf, a1);
 	outputBuffer(len);
 }
-int printf2(const char * string, int a1, int a2) {
+void printf2(const char * string, int a1, int a2) {
         unsigned int len = FormatString(string, slen(string), stringBuf, a1, a2);
 	outputBuffer(len);
 }
 
-int exit(int exitCode) {
+void exit(int exitCode) {
 	if(exitCode>0) ledOn();
 	printf1("Exit with code %d. Halting.",exitCode);
         hang();
 }
-int puts(int c) {
+void puts(int c) {
         //nothign
 }
 

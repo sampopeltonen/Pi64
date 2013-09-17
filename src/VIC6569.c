@@ -41,7 +41,7 @@ extern void start_l1cache();
 //extern void setBgColour (unsigned int);
 extern word VICforeColour[];
 extern word VICbgColour[];
-extern drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);
+extern void drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);
 
 // controlled by DEN bit, inspected during rasterline 0x30
 int displayEnabled = 0;
@@ -82,34 +82,9 @@ byte frame=0;
 
 void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int pixel) {
 	x-=120;
-	unsigned int i;
-	byte bit = B8;
-	//int bgcol = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
-	//setBgColour(colors[(vicRegisters[0x21] & (B1+B2+B3+B4))]);
-	//setForeColour(pixel);
 	VICbgColour[0] = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
 	VICforeColour[0] = pixel;
-	//Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * sdl_screen_bpp;
-
-	//SDL_LockSurface(tvscreen);
-
-	//drawOctetBeam(x,y,data);
 	drawPixelOctet(x,y,data);
-	/*
-	for(i=0; i<8; i++) {
-		if((data & bit)==bit) {
-			//*((Uint32 *)p + (i*sizeof(Uint32))) = pixel;
-			//putpixel(x+i, y, pixel);
-		}
-		else {
-			//*((Uint32 *)p + (i*sizeof(Uint32))) = bgcol;
-			//putpixel(x+i, y, bgcol);
-		}
-		bit = bit / 2;
-	}
-	*/
-	//SDL_UnlockSurface(tvscreen);
-	//SDL_UpdateRect(tvscreen, x,y, 8, 1);
 }
 
 
@@ -139,8 +114,8 @@ byte vicMemReadByte(word address) {
 	}
 
 	// TODO: resolve the bank somehow (bits 15-16)
-	word bit15 = 0x4000;
-	word bit16 = 0x8000;
+	//word bit15 = 0x4000;
+	//word bit16 = 0x8000;
 
 	// TODO: char rom should only visible in banks 0 and 2
 	if(address>=0x1000 && address<0x2000) {
@@ -213,7 +188,7 @@ void vicCycle() {
 		if(currentRasterLine==0x30) {
 			if(frame++==50) {
 				frame=0;
-				printf2("50 frames done. avg = %d/%d micros/cycle", debugTimeMeasure, debugTimeMeasureCount);
+				printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
 				debugTimeMeasure=0;
 				debugTimeMeasureCount=0;
 			}
@@ -362,7 +337,6 @@ void vic6569_init() {
 	VC=0; // video counter 10 bits
 	VCBASE=0; // video counter base 10 bits
 	RC=0; // row counter 3 bits
-	VML[50]; // video matrix line data
 	VMLI=0; // video matrix line index
 
 	debugTimeMeasure =0;
@@ -387,9 +361,8 @@ void vic6569_init() {
 }
 
 void mainLoop() {
-	int delayCounter = 0;
-	int monitorUpdateCounter = 0;
-	//SDL_Event keyevent;
+	//int delayCounter = 0;
+	//int monitorUpdateCounter = 0;
 	int run = 1;
 	uint64_t t1;
 	uint64_t t2;

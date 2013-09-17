@@ -757,6 +757,7 @@ void mneSBC(int am, int cycles) {
 	sword tmp;
 	if((P & PFLAG_DECIMAL) == PFLAG_DECIMAL) {
 		printf("decimal mode not implemented.");
+		tmp = 0; // silence compiler warning
 		exit(1);
 	}
 	else {
