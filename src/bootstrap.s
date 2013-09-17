@@ -1,17 +1,24 @@
 .globl _start
 _start:
-	/*mov sp,#0x00010000*/
+	/* set up the stack pointer. Stack grows downwards. */
+	/* mov sp,#0x8000 */
 	mov sp,#0x00200000
 
+/*
+* Jump to main program
+*/
+	bl vicmain
 
 /* 
 * Setup the screen.
 */
-        mov r0,#1024
+.globl setupScreen
+setupScreen:
+	push {r4,lr}
+	/*mov r0,#1024
         mov r1,#768
-        mov r2,#16
+        mov r2,#16*/
         bl InitialiseFrameBuffer
-
 
 /* 
 * Check for a failed frame buffer.
@@ -19,16 +26,8 @@ _start:
         teq r0,#0
         bne noError$
 
-        mov r0,#16
-        mov r1,#1
-        bl SetGpioFunction
-
-        mov r0,#16
-        mov r1,#0
-        bl SetGpio
-
-        error$:
-                b error$
+	bl ledOn
+	b hang
 
         noError$:
 
@@ -40,13 +39,8 @@ _start:
 * Let our drawing method know where we are drawing to.
 */
         bl SetGraphicsAddress
-
-
-/*
-* Jump to main program
-*/
-	bl vicmain
-
+	.unreq fbInfoAddr
+	pop {r4,pc}
 
 
 .globl start_l1cache
@@ -87,6 +81,28 @@ start_mmu:
     mcr p15,0,r2,c1,c0,0
 
     bx lr
+
+
+.globl PUT32
+PUT32:
+    str r1,[r0]
+    bx lr
+
+.globl GET32
+GET32:
+    ldr r0,[r0]
+    bx lr
+
+.globl ledOn
+ledOn:
+	push {lr}
+        mov r0,#16
+        mov r1,#1
+        bl SetGpioFunction
+        mov r0,#16
+        mov r1,#0
+        bl SetGpio
+	pop {pc}
 
 .globl hang
 hang: b hang

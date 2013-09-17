@@ -7,10 +7,16 @@ extern void DrawString (const void* string, unsigned int, unsigned int, unsigned
 extern unsigned int FormatString(const char* format, unsigned int length, char* dest, ...);
 extern void setForeColour (unsigned int);
 extern void DrawLine (unsigned int, unsigned int, unsigned int, unsigned int);
+extern void ledOn();
 extern void hang();
 
 char stringBuf[STR_MAX_LEN];
-unsigned int vpos = 10;
+unsigned int vpos;
+
+void init_stdlibtools() {
+	vpos = 10;
+}
+
 
 unsigned int slen(const char* str) {
         int i=0;
@@ -24,13 +30,13 @@ void outputBuffer(unsigned int len) {
 	setForeColour(0x0000); 
 	int i=0;
 	while(i<16) {
-		DrawLine(600, vpos+i, 900, vpos+i);
+		DrawLine(320, vpos+i, 639, vpos+i);
 		i++;
 	}
 	setForeColour(0x8888);
-	DrawString(stringBuf, len, 600, vpos);
+	DrawString(stringBuf, len, 320, vpos);
 	vpos+=16;
-	if(vpos>650) vpos=10;
+	if(vpos>460) vpos=10;
 }
 
 // TODO: stdlib replacement stuff
@@ -49,6 +55,8 @@ int printf2(const char * string, int a1, int a2) {
 }
 
 int exit(int exitCode) {
+	if(exitCode>0) ledOn();
+	printf1("Exit with code %d. Halting.",exitCode);
         hang();
 }
 int puts(int c) {

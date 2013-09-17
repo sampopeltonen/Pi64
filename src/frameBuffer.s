@@ -74,6 +74,7 @@ InitialiseFrameBuffer:
 
 	mov r0,fbInfoAddr
 	add r0,#0x40000000
+	/*add r0,#0xc0000000*/
 	mov r1,#1
 	bl MailboxWrite
 	

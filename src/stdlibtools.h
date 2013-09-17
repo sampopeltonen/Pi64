@@ -3,6 +3,7 @@
 
 // TODO: something like stdlib replacement stuff
 
+void init_stdlibtools();
 int printf(const char * string);
 int printf1(const char * string, int a1);
 int printf2(const char * string, int a1, int a2);

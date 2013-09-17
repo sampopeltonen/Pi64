@@ -6,7 +6,6 @@
 #include "types.h"
 #include "ram.h"
 //#include "rom.h"
-#include "testing.h"
 
 void mos6510_init();
 void mos6510_cycle();

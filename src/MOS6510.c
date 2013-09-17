@@ -715,7 +715,7 @@ void mneROR(int am, int cycles) {
 		/*
 		Näyttää bugille tässä, korjaa ja testaa
 		*/
-		if((A & B8)==B1) tmpbit = 1;
+		if((A & B8)==B8) tmpbit = 1;
 		A = (A >> 1) & 0x7f;
 		A = A | ((P & PFLAG_CARRY) ? 0x80 : 0x00);
 		tmpbit ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
@@ -724,7 +724,7 @@ void mneROR(int am, int cycles) {
 	else {
 		resolveAddressModeTarget(am, &target);
 		tmpb = memReadByte(target);
-		if((tmpb & B8)==B1) tmpbit = 1;
+		if((tmpb & B8)==B8) tmpbit = 1;
 		tmpb = (tmpb >> 1) & 0x7f;
 		tmpb = tmpb | ((P & PFLAG_CARRY) ? 0x80 : 0x00);
 		tmpbit ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
