@@ -21,12 +21,13 @@ byte mem[0xffff];
 
 byte memReadByte(word address) {
 
-
-	//if(address>0x3 && address <0x7) {
-		//printf("halt! read %X value %x\n",address, mem[address]);
-		//return(0xaa);
-		//exit(1);
-	//}
+	/*
+	if(address>=0x2b && address<=0x2c) {
+		printf2("BAS: %x read value %x",address,mem[address]);
+	}
+	if(address>=0x37 && address<=0x38) {
+		printf2("BAE: %x read value %x",address,mem[address]);
+	}*/
 
 
 	/*
