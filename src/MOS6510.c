@@ -101,8 +101,8 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 	int pageCrossed = 0;
 	switch (am) {
 		case ACCUMULATOR:
-			printf("ERROR: Accumulator address mode should be handled differently.\n");
-			exit(1);
+			*targetAddress = A;
+			break;
 		case IMMEDIATE:
 			*targetAddress = PC++; // inc counter manually
 			break;
@@ -170,7 +170,7 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 
 
 void mneILL(int am, int cycles) {
-	printf1("Illegal opcode %x.\n", memReadByte(PC-1));
+	printf2("Illegal opcode %x. PC=%x", memReadByte(PC-1),PC-1);
 	exit(0);
 }
 
@@ -180,17 +180,26 @@ void mneADC(int am, int cycles) {
     #endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
-	word t = A + memReadByte(target) + ((P & PFLAG_CARRY) << 8);
+	word tmp = memReadByte(target) + ((P & PFLAG_CARRY) ? 1 : 0);
 
-	#if DEBUG_6510
-	printf1("t=A+M+C=%x, ", t);
-	#endif
-
-	if((B8 & A)!=(B8 & t)) {
-		setPFlag(PFLAG_OVERFLOW);
-		printf1("PC=%x ADC overflow",PC);
+	if((P & PFLAG_DECIMAL)==PFLAG_DECIMAL) {
+		printf("ADC decimal mode not implemented.");
+		exit(1);
 	}
-	else clearPFlag(PFLAG_OVERFLOW);
+
+	// V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
+	
+	byte bA8 = (A & B8);
+	byte bB8 = (tmp & B8);
+	
+	word t = A + tmp;
+	A = t & 0xff;
+
+	byte bC7 = ((A & B7) << 1);  // shifted to 8 position
+	// Use ~(a & b) or (~a | ~b) for (a NAND b) 
+	byte V = (((bA8 ^ bB8) & bC7) ^ ((~(bA8 & bB8)) ^ bC7));   // inverted result
+
+	(V==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 
 	if(B8 == (B8 & A)) setPFlag(PFLAG_NEGATIVE);
 	else clearPFlag(PFLAG_NEGATIVE);
@@ -198,29 +207,8 @@ void mneADC(int am, int cycles) {
 	if(t==0) setPFlag(PFLAG_ZERO);
 	else clearPFlag(PFLAG_ZERO);
 
-	if((P & PFLAG_DECIMAL)==PFLAG_DECIMAL) {
-		printf(" decimal mode not implemented.");
-		exit(1);
-	}
-	else {
-		if(t>0xff) {
-			setPFlag(PFLAG_CARRY);
-			#if DEBUG_6510
-			printf("C=1, ");
-			#endif
-		}
-		else {
-			clearPFlag(PFLAG_CARRY);
-			#if DEBUG_6510
-			printf("C=0, ");
-			#endif
-		}
-	}
-	A = t & 0xff;
-	#if DEBUG_6510
-	printf("A=%X ", A);
-	#endif
-
+	if(t>0xff) setPFlag(PFLAG_CARRY);
+	else clearPFlag(PFLAG_CARRY);
 }
 
 void mneAND(int am, int cycles) {
@@ -370,6 +358,7 @@ void mneBPL(int am, int cycles) {
 	printf("BPL ");
 	#endif
 	cyc = cycles;
+	// TODO: move inside if
 	sbyte offset = readMemoryPC();
 	if((PFLAG_NEGATIVE & P)==0) {
 		#if DEBUG_6510
@@ -457,10 +446,11 @@ void mneCPX(int am, int cycles) {
 	#if DEBUG_6510
 	printf("vrt X-M %X-%X ",X, memReadByte(target));
 	#endif
-	byte tmp = X - memReadByte(target);
+	byte value = memReadByte(target);
+	byte tmp = X - value;
 	setZeroAndNegativePFlags(&tmp);
-	if((tmp & B8)==B8) setPFlag(PFLAG_CARRY);
-	else clearPFlag(PFLAG_CARRY);
+        if(X>=value) setPFlag(PFLAG_CARRY);
+        else clearPFlag(PFLAG_CARRY);
 }
 
 void mneCPY(int am, int cycles) {
@@ -473,10 +463,11 @@ void mneCPY(int am, int cycles) {
 	#if DEBUG_6510
 	printf("vrt Y-M %X-%X ",Y, memReadByte(target));
 	#endif
-	byte tmp = Y - memReadByte(target);
-	setZeroAndNegativePFlags(&tmp);
-	if((tmp & B8)==B8) setPFlag(PFLAG_CARRY);
-	else clearPFlag(PFLAG_CARRY);
+	byte value = memReadByte(target);
+        byte tmp = Y - value;
+        setZeroAndNegativePFlags(&tmp);
+        if(Y>=value) setPFlag(PFLAG_CARRY);
+        else clearPFlag(PFLAG_CARRY);
 }
 
 void mneDEC(int am, int cycles) {
@@ -630,6 +621,7 @@ void mneLSR(int am, int cycles) {
 	(tmp & B1) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
 	tmp = (tmp >> 1) & 0x7f;
 	(tmp==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+	memWriteByte(target, tmp);
 }
 
 void mneNOP(int am, int cycles) {
@@ -715,9 +707,6 @@ void mneROR(int am, int cycles) {
 	byte tmpb;
 	int tmpbit = 0;
 	if(am==ACCUMULATOR) {
-		/*
-		Näyttää bugille tässä, korjaa ja testaa
-		*/
 		if((A & B8)==B8) tmpbit = 1;
 		A = (A >> 1) & 0x7f;
 		A = A | ((P & PFLAG_CARRY) ? 0x80 : 0x00);
@@ -796,14 +785,6 @@ void mneSBC(int am, int cycles) {
 			printProcessorStatus();
 		}
 	}
-		/*
-		tmp = A - memReadByte(target) - ((P & PFLAG_CARRY) ? 0 : 1);
-		((tmp > 0x7f) || (tmp < -0x80)) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
-	}
-	(tmp>=0) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
-	(tmp & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
-	(tmp==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
-	*/
 }
 
 void mneSEC(int am, int cycles) {
@@ -1208,11 +1189,14 @@ void printProcessorStatus() {
 	printf1("S=%x",S);
 }
 
-
+int yesDump;
 void mos6510_cycle() {
 	if(cyc--<=0) {
-		/*if(PC==0xbdcd||PC==0xe435) {
+		/*if(yesDump) printf1("PC = %x",PC);
+		if(PC==0xbdfe) {
+			yesDump = 1;
 			printProcessorStatus();
+			exit(1);
 		}*/	
 
 		byte opCode = readMemoryPC();
@@ -1230,6 +1214,7 @@ void mos6510_cycle() {
 
 
 void mos6510_init() {
+	yesDump=0;
 	printf("MOS6510 init");
 	initMnemonicArray();
 	//loadROM();
