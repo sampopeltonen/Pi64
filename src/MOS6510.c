@@ -186,7 +186,10 @@ void mneADC(int am, int cycles) {
 	printf1("t=A+M+C=%x, ", t);
 	#endif
 
-	if((B8 & A)!=(B8 & t)) setPFlag(PFLAG_OVERFLOW);
+	if((B8 & A)!=(B8 & t)) {
+		setPFlag(PFLAG_OVERFLOW);
+		printf1("PC=%x ADC overflow",PC);
+	}
 	else clearPFlag(PFLAG_OVERFLOW);
 
 	if(B8 == (B8 & A)) setPFlag(PFLAG_NEGATIVE);
@@ -748,28 +751,59 @@ void mneRTS(int am, int cycles) {
 	#endif
 }
 
+extern void printProcessorStatus();
+
 void mneSBC(int am, int cycles) {
 	#if DEBUG_6510
 	printf("SBC ");
 	#endif
 	word target;
 	cyc=cycles + resolveAddressModeTarget(am, &target);
-	sword tmp;
+	byte tmp;
 	if((P & PFLAG_DECIMAL) == PFLAG_DECIMAL) {
 		printf("decimal mode not implemented.");
-		tmp = 0; // silence compiler warning
+		//tmp = 0; // silence compiler warning
 		exit(1);
 	}
 	else {
 		#if DEBUG_6510
 		printf("value %x ", memReadByte(target));
 		#endif
+		if(PC>0xe430 && PC<0xe440) {
+			printf("----- SBC -----");
+			printf2("A=%x target=%x",A,memReadByte(target));
+		}
+
+		tmp = memReadByte(target) + ((P & PFLAG_CARRY) ? 0 : 1);
+
+		(tmp>A) ? clearPFlag(PFLAG_CARRY) : setPFlag(PFLAG_CARRY);
+
+		// V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
+		
+		byte bA8 = (A & B8);
+		byte bB8 = (tmp & B8);
+
+		A = A - tmp;
+		
+		byte bC7 = ((A & B7) << 1);  // shifted to 8 position
+		// Use ~(a & b) or (~a | ~b) for (a NAND b) 
+		byte V = (((bA8 ^ bB8) & bC7) ^ ((~(bA8 & bB8)) ^ bC7));   // inverted result
+
+		(V==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+		(A & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
+		(A==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+		if(PC>0xe430 && PC<0xe440) {
+			printProcessorStatus();
+		}
+	}
+		/*
 		tmp = A - memReadByte(target) - ((P & PFLAG_CARRY) ? 0 : 1);
 		((tmp > 0x7f) || (tmp < -0x80)) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 	}
 	(tmp>=0) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
 	(tmp & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
 	(tmp==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+	*/
 }
 
 void mneSEC(int am, int cycles) {
@@ -1165,8 +1199,22 @@ void reset() {
 }
 
 
+void printProcessorStatus() {
+	printf1("PC=%x",PC);
+	printf1("A=%x",A);
+	printf1("X=%x",X);
+	printf1("Y=%x",Y);
+	printf1("P=%x",P);
+	printf1("S=%x",S);
+}
+
+
 void mos6510_cycle() {
 	if(cyc--<=0) {
+		/*if(PC==0xbdcd||PC==0xe435) {
+			printProcessorStatus();
+		}*/	
+
 		byte opCode = readMemoryPC();
 		//printf2("[%x] op=%x  ",PC-1, opCode);
 //		if((PC-1)==0xe430) {
