@@ -188,7 +188,7 @@ void vicCycle() {
 		if(currentRasterLine==0x30) {
 			if(frame++==50) {
 				frame=0;
-				printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
+				//printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
 				debugTimeMeasure=0;
 				debugTimeMeasureCount=0;
 			}
