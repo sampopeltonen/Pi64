@@ -3,13 +3,9 @@
 
 #include "types.h"
 
-
-
 byte memReadByte(word address);
 word memReadWord(word address);
 void memWriteByte(word address, byte data);
-
-
 
 
 /* pointers to specific memory locations
