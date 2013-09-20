@@ -9,13 +9,15 @@ This is a hobby project for me to learn both the ARM assembly and the internals 
 
 The project is on quite early state and **is not functional C64 emulator**.
 
-Current status is that the default VIC text mode works barely, so that the C64 screen is succesfully outputted from hdmi connector and C64 kernal boot process runs and prints the startup messages. Available free memory is printed out wrong as a float number though...
+Current status is that the default VIC text mode works barely enough that the C64 screen is successfully outputted and C64 kernal boot process runs through and startup messages are visible.
 
-CIA chips are work in progress and don't work. So no keyboard or even blinking cursor as it depends on CIA timer.
+CIA chips are work in progress and don't work. So no keyboard or even blinking cursor as it depends on a CIA timer.
 
 SID chip (sound) is totally out of scope for any time soon.
 
-Emulation speed is currently faster than real-time, about 125%.
+VIC chip needs much additional work.
+
+Emulation speed is faster than real-time, about 125%.
 
 ### Compilation and installation
 
@@ -31,7 +33,7 @@ should build and link all sources and produce emulator binary
 
 	kernel.img
 	
-For running the emulator you need an SD card with FAT32 partition. In the root of this filesystem three files are needed:
+For running the emulator you need an SD card with FAT32 partition. In the root of this filesystem three files are needed for running the emulator on the Raspberry Pi:
 
 	bootcode.bin
 	kernel.img
@@ -45,4 +47,4 @@ All the C64 emulation code is my own and some of the low level graphics output a
 
 Bootsrap code, framebuffer initialization, system timer and text output (for debugging purposes) come from Alex Chadwick's [Baking Pi](http://www.cl.cam.ac.uk/projects/raspberrypi/tutorials/os/index.html) tutorial.
 
-Some code related to processor l1 cache and MMU initialization originate from [David Welch's great tutorials and examples](https://github.com/dwelch67/raspberrypi).
+Code related to processor l1 cache and MMU initialization originate from [David Welch's Pi examples](https://github.com/dwelch67/raspberrypi).
