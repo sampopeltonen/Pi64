@@ -699,6 +699,7 @@ void mneROL(int am, int cycles) {
 }
 
 void mneROR(int am, int cycles) {
+
 	#if DEBUG_6510
 	printf("ROR ");
 	#endif
@@ -716,7 +717,8 @@ void mneROR(int am, int cycles) {
 	else {
 		resolveAddressModeTarget(am, &target);
 		tmpb = memReadByte(target);
-		if((tmpb & B8)==B8) tmpbit = 1;
+		
+		if((tmpb & B1)==B1) tmpbit = 1;
 		tmpb = (tmpb >> 1) & 0x7f;
 		tmpb = tmpb | ((P & PFLAG_CARRY) ? 0x80 : 0x00);
 		tmpbit ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
@@ -758,10 +760,6 @@ void mneSBC(int am, int cycles) {
 		#if DEBUG_6510
 		printf("value %x ", memReadByte(target));
 		#endif
-		if(PC>0xe430 && PC<0xe440) {
-			printf("----- SBC -----");
-			printf2("A=%x target=%x",A,memReadByte(target));
-		}
 
 		tmp = memReadByte(target) + ((P & PFLAG_CARRY) ? 0 : 1);
 
@@ -781,9 +779,6 @@ void mneSBC(int am, int cycles) {
 		(V==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 		(A & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
 		(A==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
-		if(PC>0xe430 && PC<0xe440) {
-			printProcessorStatus();
-		}
 	}
 }
 
@@ -1181,23 +1176,22 @@ void reset() {
 
 
 void printProcessorStatus() {
-	printf1("PC=%x",PC);
-	printf1("A=%x",A);
-	printf1("X=%x",X);
-	printf1("Y=%x",Y);
-	printf1("P=%x",P);
-	printf1("S=%x",S);
+	printf2("PC=%x  A=%x",PC,A);
+	printf2(" X=%x  Y=%x",X,Y);
+	printf2(" P=%x  S=%x",P,S);
 }
 
 int yesDump;
 void mos6510_cycle() {
 	if(cyc--<=0) {
-		/*if(yesDump) printf1("PC = %x",PC);
-		if(PC==0xbdfe) {
-			yesDump = 1;
-			printProcessorStatus();
-			exit(1);
-		}*/	
+		//if(yesDump>0) printf1("PC = %x",PC);
+		/*if(PC==0xbe0b || yesDump>0) {
+			yesDump++;
+			if(yesDump==0x90) {
+				printProcessorStatus();
+				//exit(1);
+			}
+		}*/
 
 		byte opCode = readMemoryPC();
 		//printf2("[%x] op=%x  ",PC-1, opCode);
