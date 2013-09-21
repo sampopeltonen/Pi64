@@ -4,6 +4,8 @@ _start:
 	/* mov sp,#0x8000 */
 	mov sp,#0x00200000
 
+	bl start_l1cache
+	bl init_mmu
 /*
 * Jump to main program
 */

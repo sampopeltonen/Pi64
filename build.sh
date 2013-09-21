@@ -13,6 +13,7 @@ arm-none-eabi-as src/gpio.s -o obj/gpio.o
 arm-none-eabi-as src/maths.s -o obj/maths.o
 arm-none-eabi-as src/text.s -o obj/text.o
 arm-none-eabi-as src/systemTimer.s -o obj/systemTimer.o
+arm-none-eabi-gcc $CC_OPTS -c src/mmu_init.c -o obj/mmu_init.o
 
 # 64 stuff
 arm-none-eabi-gcc $CC_OPTS -c src/CIA6526.c -o obj/CIA6526.o
@@ -29,6 +30,7 @@ arm-none-eabi-as src/cathoderay.s -o obj/cathoderay.o
 # link
 arm-none-eabi-ld -T lscript obj/bootstrap.o \
 obj/gpio.o obj/mailbox.o obj/frameBuffer.o obj/drawing.o obj/maths.o obj/text.o obj/systemTimer.o \
+obj/mmu_init.o \
 obj/CIA6526.o \
 obj/ioregarea.o \
 obj/ram.o \
