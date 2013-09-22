@@ -1,3 +1,13 @@
+/*
+ ============================================================================
+ Name        : CIA6526.h
+ Author      : Sampo Peltonen
+ Licence     : GNU General Public License, version 2.
+ Copyright   : Copyright (C) 2013  Sampo Peltonen
+ Description : CIA6526 simulation
+ ============================================================================
+ */
+
 #ifndef CIA6526_H_
 #define CIA6526_H_
 
@@ -26,6 +36,22 @@ typedef struct {
 	int cia_number;
 	byte reg[0xf][2];
 
+	byte interruptStatus;
+	byte interruptMask;	//only lowest 5 bits are relevant
+	
+	word timerACurrentValue;
+	word timerBCurrentValue;
+
+	word timerALatchValue;
+	word timerBLatchValue;
+
+	byte portADataDirReg;
+	byte portBDataDirReg;
+	
+	byte timerAControlReg;	
+	byte timerBControlReg;
+
+	void (*irqHandler)();  // function that this CIA calls when irq happens
 
 	/*
 	byte portA;			// address 0
@@ -57,28 +83,6 @@ typedef struct {
 } cia_state;
 
 
-//typedef struct {
-//	byte dataportA;
-//	byte dataportB;
-//	byte ddrA;  // data direction register A
-//	byte ddrB;  // data direction register B
-//	byte timerAlow;
-//	byte timerAhigh;
-//	byte timerBlow;
-//	byte timerBhigh;
-//	byte clockSecTenths;
-//	byte clockSecs;
-//	byte clockMins;
-//	byte clockHours; // AM/PM Flag (Bit 7)
-//	byte serialDataBuffer;
-//	byte icr; // interrupt control register
-//	byte crA; // control register for timer A
-//	byte crB; // control register for timer B
-//} cia_s;
-
-//cia_s cia1;
-//cia_s cia2;
-
 cia_state cia1_state;
 cia_state cia2_state;
 
@@ -88,5 +92,6 @@ void cia6526_writeByte(cia_state* cia, word address, byte data);
 
 void cia6526_cycle(cia_state* cia);
 
+void cia_init();
 
 #endif /*CIA6526_H_*/
