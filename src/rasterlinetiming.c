@@ -1,3 +1,13 @@
+/*
+ ============================================================================
+ Name        : rasterlinetiming.c
+ Author      : Sampo Peltonen
+ Licence     : GNU General Public License, version 2.
+ Copyright   : Copyright (C) 2013  Sampo Peltonen
+ Description : VIC6569 simulation
+ ============================================================================
+ */
+
 #include "rasterlinetiming.h"
 #include "types.h"
 

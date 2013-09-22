@@ -1,9 +1,20 @@
+/*
+ ============================================================================
+ Name        : ioregarea.c
+ Author      : Sampo Peltonen
+ Licence     : GNU General Public License, version 2.
+ Copyright   : Copyright (C) 2013  Sampo Peltonen
+ Description : Commodore 64 simulation
+ ============================================================================
+ */
 
 #include "ioregarea.h"
+#include "stdlibtools.h"
 //#include <stdio.h>
 //#include <stdlib.h>
 #include "VIC6569.h"
 #include "CIA6526.h"
+#include "MOS6510.h"
 
 //                                 kyseessä
 //                                 tämä alue
@@ -71,8 +82,13 @@ void initIoRegArea() {
 //	ioarea[0xd02] = &cia2_state.ddrA;
 //	ioarea[0xd03] = &cia2_state.ddrB;
 
+	cia_init();
+
 	cia1_state.cia_number =1;
+	cia1_state.irqHandler = &mos_irq;
+	
 	cia2_state.cia_number =2;
+	cia2_state.irqHandler = &mos_nmi;
 
 }
 
@@ -81,16 +97,16 @@ void cycleIoRegArea() {
 	cia6526_cycle(&cia2_state);
 }
 
-
+/*
 void checkAddress(word address) {
 	if(address>=0x1000) {
 		//printf("illegal address access to ioarea, should be 0-0xfff , was 0x%x\n", address);
 		//exit(1);
 	}
-}
+}*/
 
 byte ioAreaReadByte(word address) {
-	checkAddress(address);
+	//checkAddress(address);
 
 /*
 	// CIA reads?
@@ -107,21 +123,20 @@ byte ioAreaReadByte(word address) {
 }
 
 void ioAreaWriteByte(word address, byte data) {
-	checkAddress(address);
+	//checkAddress(address);
 
 	// CIA Writes?
 	if(address>=0xc00 && address<=0xc0f) {
-		//printf("CIA1 write address 0xdc0%x data %x\n", address-0xc00, data);
+		//printf2("CIA1 write address 0xdc0%x data %x\n", address-0xc00, data);
 		cia6526_writeByte(&cia1_state, address-0xc00, data);
 		return;
 	}
-	/*
+	
 	if(address>=0xd00 && address<=0xd0f) {
-		//printf("CIA2 write address 0xdd0%x data %x\n", address-0xd00, data);
-		writeCIAaddress(&cia2_state, address-0xd00, data);
+		//printf2("CIA2 write address 0xdd0%x data %x\n", address-0xd00, data);
+		cia6526_writeByte(&cia2_state, address-0xd00, data);
 		return;
 	}
-*/
 
 	*ioarea[address] = data;
 }

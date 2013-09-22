@@ -1,3 +1,13 @@
+/*
+ ============================================================================
+ Name        : ram.c
+ Author      : Sampo Peltonen
+ Licence     : GNU General Public License, version 2.
+ Copyright   : Copyright (C) 2013  Sampo Peltonen
+ Description : Commodore 64 simulation
+ ============================================================================
+ */
+
 //#include <stdlib.h>
 //#include <stdio.h>
 #include "ram.h"
