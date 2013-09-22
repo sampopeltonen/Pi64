@@ -7,17 +7,19 @@ This is a hobby project for me to learn both the ARM assembly and the internals 
 
 ### Current Status
 
-The project is on quite early state and **is not functional C64 emulator**.
+The project is on quite early state and **is not yet a functional C64 emulator**.
 
 Current status is that the default VIC text mode works barely enough that the C64 screen is successfully outputted and C64 kernal boot process runs through and startup messages are visible.
 
-CIA chips are work in progress and don't work. So no keyboard or even blinking cursor as it depends on a CIA timer.
+CIA chips are work in progress but they are now partly functional: timers somewhat work, interrupts are generated and handled by the main processsor so finally there's the blinking cursor.
+
+There's no keyboard, not even Raspberry Pi level USB driver for any keyboard to connect to.
 
 SID chip (sound) is totally out of scope for any time soon.
 
 VIC chip needs much additional work.
 
-Emulation speed is faster than real-time, about 125%.
+Emulation speed is faster than real-time, about 110%. Needs further optimizing.
 
 ### Compilation and installation
 
