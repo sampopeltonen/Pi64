@@ -2,12 +2,13 @@
  ============================================================================
  Name        : MOS6510.c
  Author      : Sampo Peltonen
- Version     :
- Copyright   : Your copyright notice
+ Licence     : GNU General Public License, version 2.
+ Copyright   : Copyright (C) 2013  Sampo Peltonen
  Description : MOS6510 simulation
  ============================================================================
  */
 
+#include "types.h"
 #include "MOS6510.h"
 #include "stdlibtools.h"
 
@@ -51,7 +52,8 @@ byte S;
 
 int cyc = 0;
 
-
+int irqLineUp;
+int nmiLineUp;
 
 typedef struct {
 	void (*pt2MnemonicHandler)(int, int);
@@ -387,7 +389,17 @@ void mneBVC(int am, int cycles) {
 }
 
 void mneBVS(int am, int cycles) {
-  printf("BVS not implemented.\n"); exit(1);
+	cyc = cycles;
+	sbyte offset = (sbyte) readMemoryPC();
+	if((P & PFLAG_OVERFLOW)== PFLAG_OVERFLOW) {
+		cyc++;
+		word newLoc = PC + offset;
+		
+		// TODO: check all the b** commands if they really can take 1-2 additional cycles...!?
+		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
+		PC = newLoc;
+	}
+	//printf1("BVS not implemented. PC=%x",PC); exit(1);
 }
 
 void mneCLC(int am, int cycles) {
@@ -728,18 +740,14 @@ void mneROR(int am, int cycles) {
 }
 
 void mneRTI(int am, int cycles) {
-  printf("RTI not implemented.\n"); exit(1);
+	P = stackPull();
+	PC = stackPull() + (stackPull() << 8);
+	//printf1("RTI pulled PC value %x from stack",PC);
 }
 
 void mneRTS(int am, int cycles) {
-	#if DEBUG_6510
-	printf("RTS ");
-	#endif
 	cyc = cycles;
 	PC = stackPull() + (stackPull() << 8) + 1;
-	#if DEBUG_6510
-	printf("PC new loc=%X ",PC);
-	#endif
 }
 
 extern void printProcessorStatus();
@@ -799,14 +807,8 @@ void mneSEI(int am, int cycles) {
 	printf("SEI ");
 	#endif
 	cyc = cycles;
-
-	if(am==IMPLIED) {
-		setPFlag(PFLAG_IRQ);
-	}
-	else {
-		printf1("SEI addressing mode not implemented: %d\n", am);
-		exit(1);
-	}
+	// there is only implied addressing mode
+	setPFlag(PFLAG_IRQ);
 }
 
 void mneSTA(int am, int cycles) {
@@ -858,8 +860,8 @@ void mneTAY(int am, int cycles) {
 }
 
 void mneTSX(int am, int cycles) {
-  	printf("TSX not implemented.\n");
-	exit(1);
+	X = S;
+	setZeroAndNegativePFlags(&X);
 }
 
 void mneTXA(int am, int cycles) {
@@ -1159,6 +1161,16 @@ void initMnemonicArray() {
 
 }
 
+void mos_irq() {
+	irqLineUp=1;
+}
+
+void mos_nmi() {
+	printf("NMI");
+	nmiLineUp=1;
+	exit(1);
+}
+
 void initRegisters() {
 	A = 0x0;
 	X = 0x0;
@@ -1181,17 +1193,33 @@ void printProcessorStatus() {
 	printf2(" P=%x  S=%x",P,S);
 }
 
-int yesDump;
+//int yesDump;
 void mos6510_cycle() {
 	if(cyc--<=0) {
+
+		// interrupts are handled
+		if(irqLineUp) {
+			if(!(P & PFLAG_IRQ)) {
+				stackPush(PC >> 8);
+				stackPush(PC);
+				//printf1("IRQ pushed PC %x to stack",PC);
+				stackPush(P);
+				PC = memReadWord(0xfffe);
+			}
+			irqLineUp=0;
+		}
+
+
+
 		//if(yesDump>0) printf1("PC = %x",PC);
-		/*if(PC==0xbe0b || yesDump>0) {
+		if(PC==0xbe0b || yesDump>0) {
 			yesDump++;
-			if(yesDump==0x90) {
+			/*if(yesDump==0x90) {
 				printProcessorStatus();
 				//exit(1);
-			}
-		}*/
+			}*/
+			if(yesDump>100) yesDump=1;
+		}
 
 		byte opCode = readMemoryPC();
 		//printf2("[%x] op=%x  ",PC-1, opCode);
@@ -1201,22 +1229,18 @@ void mos6510_cycle() {
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
 	}
-	#if DEBUG_6510
-	else printf(".");
-	#endif
 }
 
 
 void mos6510_init() {
 	yesDump=0;
-	printf("MOS6510 init");
+	cyc=0;
+	irqLineUp=0;
+	nmiLineUp=0;
+	//printf("MOS6510 init");
 	initMnemonicArray();
 	//loadROM();
 	reset();
-}
-
-void mos6510_HWInterrupt() {
-	printf("HW interrupt\n");
 }
 
 
