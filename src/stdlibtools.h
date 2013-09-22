@@ -7,6 +7,7 @@ void init_stdlibtools();
 void printf(const char * string);
 void printf1(const char * string, int a1);
 void printf2(const char * string, int a1, int a2);
+void printf3(const char * string, int a1, int a2, int a3);
 void exit(int exitCode);
 void puts(int c);
 

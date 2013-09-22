@@ -53,6 +53,10 @@ void printf2(const char * string, int a1, int a2) {
         unsigned int len = FormatString(string, slen(string), stringBuf, a1, a2);
 	outputBuffer(len);
 }
+void printf3(const char * string, int a1, int a2, int a3) {
+        unsigned int len = FormatString(string, slen(string), stringBuf, a1, a2, a3);
+	outputBuffer(len);
+}
 
 void exit(int exitCode) {
 	if(exitCode>0) ledOn();
