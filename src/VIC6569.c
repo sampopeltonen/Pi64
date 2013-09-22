@@ -2,11 +2,12 @@
  ============================================================================
  Name        : VIC6569.c
  Author      : Sampo Peltonen
- Version     :
- Copyright   : Your copyright notice
+ Licence     : GNU General Public License, version 2.
+ Copyright   : Copyright (C) 2013  Sampo Peltonen
  Description : VIC6569 simulation
  ============================================================================
  */
+
 //#include <stdio.h>
 //#include <SDL/SDL.h>
 #include "MOS6510.h"
@@ -183,7 +184,7 @@ void vicCycle() {
 		if(currentRasterLine==0x30) {
 			if(frame++==50) {
 				frame=0;
-				printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
+				//printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
 				debugTimeMeasure=0;
 				debugTimeMeasureCount=0;
 			}
@@ -360,7 +361,7 @@ void mainLoop() {
 
 		//Wait(100000); // 100000 about 1/5 sec
 		
-		//cycleIoRegArea();
+		cycleIoRegArea();
 		
 		if(FLAG_BA==BA_UP) mos6510_cycle();
 
@@ -394,14 +395,14 @@ int vicmain(void) {
 	//setupScreen(1024,768,16);
 	setupScreen(640,480,16);
 	init_stdlibtools();
-	printf("raspi64 init started");
+	printf("raspi64 started");
 
 	
 	vic6569_init();
 	//monitor_init();
 	mos6510_init();
-	printf("initialization done");
-	printf("start main loop");
+	//printf("initialization done");
+	//printf("start main loop");
 	mainLoop();
 
 	//SDL_Quit();
