@@ -11,6 +11,8 @@
 #include "types.h"
 #include "MOS6510.h"
 #include "stdlibtools.h"
+#include "usbkeyboard.h"
+#include "ram.h"
 
 #define DEBUG_6510 0
 
@@ -38,7 +40,6 @@
 #define PFLAG_UNUSED 32
 #define PFLAG_OVERFLOW 64
 #define PFLAG_NEGATIVE 128
-
 
 
 // Internal Registers
@@ -1208,24 +1209,20 @@ void mos6510_cycle() {
 			}
 			irqLineUp=0;
 		}
-
-
-
-		//if(yesDump>0) printf1("PC = %x",PC);
+	
+		/*
 		if(PC==0xbe0b || yesDump>0) {
 			yesDump++;
-			/*if(yesDump==0x90) {
+			if(yesDump==0x90) {
 				printProcessorStatus();
-				//exit(1);
-			}*/
-			if(yesDump>100) yesDump=1;
+				initKeyboard();
+				exit(1);
+			}
+			//if(yesDump>100) yesDump=1;
 		}
-
+		*/
+		
 		byte opCode = readMemoryPC();
-		//printf2("[%x] op=%x  ",PC-1, opCode);
-//		if((PC-1)==0xe430) {
-//			printf("hoplaa");
-//		}
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
 	}
