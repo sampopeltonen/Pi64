@@ -72,7 +72,14 @@ void init_mmu(void) {
         if(add_one(0x00000000,0x0000|8|4)) exit(1);
         if(add_one(0x00100000,0x0000|8|4)) exit(1);
         if(add_one(0x00200000,0x0000|8|4)) exit(1);
-        //Memory mapped I/O used by the uart, etc, not cached
+        if(add_one(0x00300000,0x0000|8|4)) exit(1);
+        if(add_one(0x00400000,0x0000|8|4)) exit(1);
+        if(add_one(0x00500000,0x0000|8|4)) exit(1);
+        if(add_one(0x00600000,0x0000|8|4)) exit(1);
+        if(add_one(0x00700000,0x0000|8|4)) exit(1);
+        if(add_one(0x00800000,0x0000|8|4)) exit(1);  
+
+	//Memory mapped I/O used by the uart, etc, not cached
         if(add_one(0x20000000,0x0000)) exit(1);
         if(add_one(0x20100000,0x0000)) exit(1);
         if(add_one(0x20200000,0x0000)) exit(1);
@@ -81,6 +88,11 @@ void init_mmu(void) {
         if(add_one(0x48000000,0x0000)) exit(1);
         if(add_one(0x48100000,0x0000)) exit(1);
         if(add_one(0x48200000,0x0000)) exit(1);
+
+	//USB registers in 20980000?
+        if(add_one(0x20900000,0x0000)) exit(1);
+        if(add_one(0x20a00000,0x0000)) exit(1);
+	
 
         // #ifdef DCACHE
         start_mmu(MMUTABLEBASE,0x00800005);
