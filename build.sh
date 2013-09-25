@@ -2,7 +2,7 @@
 
 rm obj/*.o
 
-CC_OPTS="-Wall -nostdlib -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -O2"
+CC_OPTS="-Wall -fshort-wchar -nostdlib -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -O2"
 
 arm-none-eabi-as src/bootstrap.s -o obj/bootstrap.o
 
@@ -14,6 +14,10 @@ arm-none-eabi-as src/maths.s -o obj/maths.o
 arm-none-eabi-as src/text.s -o obj/text.o
 arm-none-eabi-as src/systemTimer.s -o obj/systemTimer.o
 arm-none-eabi-gcc $CC_OPTS -c src/mmu_init.c -o obj/mmu_init.o
+#arm-none-eabi-gcc -I include $CC_OPTS -c src/usbkeyboard.c -o obj/usbkeyboard.o
+#arm-none-eabi-gcc $CC_OPTS -c src/usbkeyboard.c -o obj/usbkeyboard.o
+arm-none-eabi-gcc $CC_OPTS -c src/prepglobals.c -o obj/prepglobals.o
+
 
 # 64 stuff
 arm-none-eabi-gcc $CC_OPTS -c src/CIA6526.c -o obj/CIA6526.o
@@ -30,6 +34,7 @@ arm-none-eabi-as src/cathoderay.s -o obj/cathoderay.o
 # link
 arm-none-eabi-ld -T lscript obj/bootstrap.o \
 obj/gpio.o obj/mailbox.o obj/frameBuffer.o obj/drawing.o obj/maths.o obj/text.o obj/systemTimer.o \
+obj/prepglobals.o \
 obj/mmu_init.o \
 obj/CIA6526.o \
 obj/ioregarea.o \
@@ -41,6 +46,8 @@ obj/VIC6569.o \
 obj/stdlibtools.o \
 obj/roms.o \
 -o kernel.elf
+
+# -L. -lcsud 
 
 arm-none-eabi-objcopy kernel.elf -O binary kernel.img
 
