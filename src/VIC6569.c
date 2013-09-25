@@ -17,6 +17,7 @@
 #include "ioregarea.h"
 #include "rasterlinetiming.h"
 #include "stdlibtools.h"
+//#include "usbkeyboard.h"
 //#include "monitor.h"
 
 // pal specific stuff
@@ -24,6 +25,11 @@
 #define VISIBLE_LINES 284
 #define PIX_PER_LINE 504
 #define VISIBLE_PIX_PER_LINE 403
+
+int testGlob;
+int testGlob1 = 0x1234;
+int testGlobArray[0x100];
+
 
 extern byte kernalROM[];
 extern byte basicROM[];
@@ -105,7 +111,8 @@ byte isDENbit() {
 byte vicMemReadByte(word address) {
 	//printf1("vicmemread addr %x", address);
 	if(address>0x3fff) {
-		printf1("incorrect vic ram access: %x\n",address);
+		//printf1("incorrect vic ram access: %x\n",address);
+		printf1("test: %x\n",address-testGlob1);
 		exit(1);
 	}
 
@@ -390,13 +397,28 @@ void mainLoop() {
 
 }
 
+extern unsigned int bss_start;
+extern unsigned int bss_end;
+extern unsigned int data_rom_start;
+extern unsigned int data_start;
+extern unsigned int data_end;
 
 int vicmain(void) {
-	//setupScreen(1024,768,16);
-	setupScreen(640,480,16);
+	setupScreen(1024,768,16);
+	//setupScreen(640,480,16);
 	init_stdlibtools();
+	//printf("init keyboard...");
+	//initKeyboard();
 	printf("raspi64 started");
 
+	printf1("testGlob1=%x ",testGlob1);
+	printf1("testGlobArray[50] = %x",testGlobArray[50]);
+	
+	printf1("bss_start      = %x",bss_start);
+	printf1("bss_end        = %x",bss_end);
+	printf1("data_rom_start = %x",data_rom_start);
+	printf1("data_start     = %x",data_start);
+	printf1("data_end       = %x",data_end);
 	
 	vic6569_init();
 	//monitor_init();
