@@ -30,13 +30,14 @@ void outputBuffer(unsigned int len) {
 	setForeColour(0x0000); 
 	int i=0;
 	while(i<16) {
-		DrawLine(320, vpos+i, 639, vpos+i);
+		DrawLine(320, vpos+i, 1023, vpos+i);
 		i++;
 	}
 	setForeColour(0x8888);
 	DrawString(stringBuf, len, 320, vpos);
 	vpos+=16;
-	if(vpos>460) vpos=10;
+	//if(vpos>460) vpos=10;
+	if(vpos>750) vpos=10;
 }
 
 // TODO: stdlib replacement stuff
@@ -57,6 +58,14 @@ void printf3(const char * string, int a1, int a2, int a3) {
         unsigned int len = FormatString(string, slen(string), stringBuf, a1, a2, a3);
 	outputBuffer(len);
 }
+
+void LogPrint(char* message, unsigned int messageLength) {
+        unsigned int len = FormatString(message, messageLength, stringBuf);
+	outputBuffer(len);
+	//printf2("%s", (int)message, messageLength);
+        //printf1("csud msg length=%d",messageLength);
+}
+
 
 void exit(int exitCode) {
 	if(exitCode>0) ledOn();
