@@ -1,11 +1,17 @@
 .globl _start
 _start:
 	/* set up the stack pointer. Stack grows downwards. */
-	/* mov sp,#0x8000 */
-	mov sp,#0x00200000
+	mov sp,#0x8000
+	/*mov sp,#0x00200000 */
+
 
 	bl start_l1cache
 	bl init_mmu
+	
+	/* nullifying .bss section may not be necessary */
+	bl prepGlobals
+	
+
 /*
 * Jump to main program
 */
@@ -108,4 +114,26 @@ ledOn:
 
 .globl hang
 hang: b hang
+
+
+.section .text
+
+.globl bss_start
+bss_start: .word __bss_start__
+
+.globl bss_end
+bss_end: .word __bss_end__
+
+.word __bss_size__
+
+.globl data_rom_start
+data_rom_start: .word __data_rom_start__
+
+.globl data_start
+data_start: .word __data_start__
+
+.globl data_end
+data_end: .word __data_end__
+
+.word __data_size__
 
