@@ -11,7 +11,7 @@
 #include "types.h"
 #include "MOS6510.h"
 #include "stdlibtools.h"
-#include "usbkeyboard.h"
+//#include "usbkeyboard.h"
 #include "ram.h"
 
 #define DEBUG_6510 0
