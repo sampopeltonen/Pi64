@@ -1,4 +1,4 @@
-.section .data
+.section .rodata
 
 
 .globl characterROM
