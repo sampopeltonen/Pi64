@@ -60,7 +60,7 @@ void doTimerCycle(cia_state* cia) {
 		if(cia->timerBCurrentValue==0xffff) {
 			// Underflow
 			cia->interruptStatus |= B2;
-			printf1("CIA-%d timerB underflow", cia->cia_number);
+			//printf1("CIA-%d timerB underflow", cia->cia_number);
 			if(cia->timerBControlReg&B4) {
 				// timer stops
 				cia->timerBControlReg&=0b11111110;
@@ -95,11 +95,11 @@ void cia6526_writeByte(cia_state* cia, word address, byte data) {
 void interruptControlAndStatusWrite(cia_state* cia, byte data, word address) {
 	if((data & B8)!=0) {	// setting according the bit mask
 		cia->interruptMask |= data;
-		printf3("CIA-%d int.mask set %x -> %x",cia->cia_number,data,cia->interruptMask);
+		//printf3("CIA-%d int.mask set %x -> %x",cia->cia_number,data,cia->interruptMask);
 	}
 	else {			// clearing according the bit mask
 		cia->interruptMask &= ~data;
-		printf3("CIA-%d int.mask clear %x -> %x",cia->cia_number,data,cia->interruptMask);
+		//printf3("CIA-%d int.mask clear %x -> %x",cia->cia_number,data,cia->interruptMask);
 	}
 }
 
@@ -110,19 +110,19 @@ byte interruptControlAndStatusRead(cia_state* cia, word address) {
 
 void timerAControlRegWrite(cia_state* cia, byte data, word address) {
 	cia->timerAControlReg = data;
-	printf2("CIA-%d timerA ctrl reg write %x",cia->cia_number,data);
+	//printf2("CIA-%d timerA ctrl reg write %x",cia->cia_number,data);
 }
 void timerBControlRegWrite(cia_state* cia, byte data, word address) {
 	cia->timerBControlReg = data;
-	printf2("CIA-%d timerB ctrl reg write %x",cia->cia_number,data);
+	//printf2("CIA-%d timerB ctrl reg write %x",cia->cia_number,data);
 }
 void portADataDirRegWrite(cia_state* cia, byte data, word address) {
 	cia->portADataDirReg = data;
-	printf2("CIA-%d portA d.dir reg write %x",cia->cia_number,data);
+	//printf2("CIA-%d portA d.dir reg write %x",cia->cia_number,data);
 }
 void portBDataDirRegWrite(cia_state* cia, byte data, word address) {
 	cia->portBDataDirReg = data;
-	printf2("CIA-%d portB d.dir reg write %x",cia->cia_number,data);
+	//printf2("CIA-%d portB d.dir reg write %x",cia->cia_number,data);
 }
 
 
