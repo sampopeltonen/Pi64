@@ -13,7 +13,7 @@ Current status is that the default VIC text mode works barely enough that the C6
 
 CIA chips are work in progress but they are now partly functional: timers somewhat work, interrupts are generated and handled by the main processsor so finally there's the blinking cursor.
 
-There's no keyboard, not even Raspberry Pi level USB driver for any keyboard to connect to.
+There's no keyboard, not even Raspberry Pi level USB driver for any keyboard to connect to, but for testing purposes there's an automatic keyboard typist that types some test material on screen right after startup messages.
 
 SID chip (sound) is totally out of scope for any time soon.
 
