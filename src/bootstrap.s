@@ -9,7 +9,7 @@ _start:
 	bl init_mmu
 	
 	/* nullifying .bss section may not be necessary */
-	bl prepGlobals
+	/* bl prepGlobals */
 	
 
 /*
@@ -115,25 +115,4 @@ ledOn:
 .globl hang
 hang: b hang
 
-
-.section .text
-
-.globl bss_start
-bss_start: .word __bss_start__
-
-.globl bss_end
-bss_end: .word __bss_end__
-
-.word __bss_size__
-
-.globl data_rom_start
-data_rom_start: .word __data_rom_start__
-
-.globl data_start
-data_start: .word __data_start__
-
-.globl data_end
-data_end: .word __data_end__
-
-.word __data_size__
 
