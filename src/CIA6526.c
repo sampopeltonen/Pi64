@@ -11,7 +11,7 @@
 #include "types.h"
 #include "CIA6526.h"
 #include "stdlibtools.h"
-
+#include "autotestkeyboard.h"
 
 typedef struct {
 	/* addresses actually only needed for debugging purposes, TODO: remove later */
@@ -125,6 +125,33 @@ void portBDataDirRegWrite(cia_state* cia, byte data, word address) {
 	//printf2("CIA-%d portB d.dir reg write %x",cia->cia_number,data);
 }
 
+//byte keybCol;
+//byte keyDown;
+//byte nokey = 0x0;
+void portAWrite(cia_state* cia, byte data, word address) {
+	if(cia->cia_number==1) {
+		autoKeybSelectColumn(data);
+		//keybCol = data;
+		//printf2("CIA-%d portA write %x",cia->cia_number,data);
+	}
+	// testing 
+}
+
+byte portBRead(cia_state* cia, word address) {
+	if(/*keyDown++>200 &&*/ cia->cia_number==1) {
+		return autoKeybReadRow();	
+		/*if(keybCol==0) {
+			// kernal is checking if anything is pressed (non-ff input)
+			return 1;
+		}
+		if(keybCol==0b11101111) {
+			printf1("portB read %x",0b11101111);
+			return(0b11101111); // V,B,N tai M
+		}*/
+	}
+	
+	return 0xff;
+}
 
 void unimplementedRegisterWrite(cia_state* cia, byte data, word address) {
 	//printf3("CIA-%d[%x] un.impl. write %x",cia->cia_number, address, data);
@@ -146,10 +173,10 @@ void timerBValueLatchLow (cia_state* cia, byte data, word address) { cia->timerB
 void timerBValueLatchHigh(cia_state* cia, byte data, word address) { cia->timerBLatchValue = (cia->timerBLatchValue&0x00ff) + (((word)data)<<8); }
 
 void cia_init() {
-	ciaReg[0x0].write = &unimplementedRegisterWrite;
+	ciaReg[0x0].write = &portAWrite;
 	ciaReg[0x0].read  = &unimplementedRegisterRead;
 	ciaReg[0x1].write = &unimplementedRegisterWrite;
-	ciaReg[0x1].read  = &unimplementedRegisterRead;
+	ciaReg[0x1].read  = &portBRead;
 	ciaReg[0x2].write = &portADataDirRegWrite;
 	ciaReg[0x2].read  = &unimplementedRegisterRead;
 	ciaReg[0x3].write = &portBDataDirRegWrite;
@@ -180,5 +207,7 @@ void cia_init() {
 	ciaReg[0xe].read  = &unimplementedRegisterRead;
 	ciaReg[0xf].write = &timerBControlRegWrite;
 	ciaReg[0xf].read  = &unimplementedRegisterRead;
+
+	autoKeybInit();
 }
 

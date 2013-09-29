@@ -12,8 +12,6 @@
 #define B7 64
 #define B8 128
 
-int yesDump;
-
 typedef uint8_t byte;
 typedef uint16_t word;
 

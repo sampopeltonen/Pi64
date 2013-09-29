@@ -16,11 +16,11 @@ arm-none-eabi-as src/systemTimer.s -o obj/systemTimer.o
 arm-none-eabi-gcc $CC_OPTS -c src/mmu_init.c -o obj/mmu_init.o
 #arm-none-eabi-gcc -I include $CC_OPTS -c src/usbkeyboard.c -o obj/usbkeyboard.o
 #arm-none-eabi-gcc $CC_OPTS -c src/usbkeyboard.c -o obj/usbkeyboard.o
-arm-none-eabi-gcc $CC_OPTS -c src/prepglobals.c -o obj/prepglobals.o
 
 
 # 64 stuff
 arm-none-eabi-gcc $CC_OPTS -c src/CIA6526.c -o obj/CIA6526.o
+arm-none-eabi-gcc $CC_OPTS -Wno-char-subscripts -c src/autotestkeyboard.c -o obj/autotestkeyboard.o
 arm-none-eabi-gcc $CC_OPTS -c src/ioregarea.c -o obj/ioregarea.o
 arm-none-eabi-gcc $CC_OPTS -c src/ram.c -o obj/ram.o
 arm-none-eabi-gcc $CC_OPTS -c src/MOS6510.c -o obj/MOS6510.o
@@ -34,9 +34,9 @@ arm-none-eabi-as src/cathoderay.s -o obj/cathoderay.o
 # link
 arm-none-eabi-ld -T lscript obj/bootstrap.o \
 obj/gpio.o obj/mailbox.o obj/frameBuffer.o obj/drawing.o obj/maths.o obj/text.o obj/systemTimer.o \
-obj/prepglobals.o \
 obj/mmu_init.o \
 obj/CIA6526.o \
+obj/autotestkeyboard.o \
 obj/ioregarea.o \
 obj/ram.o \
 obj/MOS6510.o \

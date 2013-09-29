@@ -375,6 +375,11 @@ void mneBPL(int am, int cycles) {
 		printf("PC new loc=%X",PC);
 		#endif
 	}
+	else {
+		if(PC>0xeac4 && PC<0xeacd) {
+			printf("BPL NOT jumping over STY $CB");
+		}
+	}
 }
 
 void mneBRK(int am, int cycles) {
@@ -628,17 +633,24 @@ void mneLSR(int am, int cycles) {
 	#endif
 	cyc = cycles;
 	word target;
-	resolveAddressModeTarget(am, &target);
-	byte tmp = memReadByte(target);
 	clearPFlag(PFLAG_NEGATIVE);
-	(tmp & B1) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
-	tmp = (tmp >> 1) & 0x7f;
-	(tmp==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
-	memWriteByte(target, tmp);
+        if(am==ACCUMULATOR) {
+		(A & B1) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+                A = (A >> 1) & 0x7f;
+		(A==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+        }
+        else {
+		resolveAddressModeTarget(am, &target);
+		byte tmp = memReadByte(target);
+		(tmp & B1) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+		tmp = (tmp >> 1) & 0x7f;
+		(tmp==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+		memWriteByte(target, tmp);
+	}
 }
 
 void mneNOP(int am, int cycles) {
-  printf("NOP not implemented.\n"); exit(1);
+  printf1("NOP not implemented. PC=%x",PC); exit(1);
 }
 
 void mneORA(int am, int cycles) {
@@ -1194,7 +1206,7 @@ void printProcessorStatus() {
 	printf2(" P=%x  S=%x",P,S);
 }
 
-//int yesDump;
+int yesDump;
 void mos6510_cycle() {
 	if(cyc--<=0) {
 
@@ -1210,18 +1222,17 @@ void mos6510_cycle() {
 			irqLineUp=0;
 		}
 	
-		/*
-		if(PC==0xbe0b || yesDump>0) {
-			yesDump++;
-			if(yesDump==0x90) {
-				printProcessorStatus();
-				initKeyboard();
-				exit(1);
-			}
-			//if(yesDump>100) yesDump=1;
-		}
-		*/
+		////// breakpoint debugging  //////
 		
+		//if(PC==0xeab6 /* && Y==0x10) || yesDump>0*/) {
+		//	yesDump++;
+		//	printf1("Y=%x",Y);
+			//if(yesDump==0x1) {
+		//		printProcessorStatus();
+				//exit(1);
+			//}
+			//if(yesDump>100) yesDump=1;
+		//}
 		byte opCode = readMemoryPC();
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
