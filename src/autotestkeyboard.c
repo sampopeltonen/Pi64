@@ -14,10 +14,20 @@ int finished = 0;
 int shifted = 0;
 
 //const char text[] = "abcdefghijklm\\nopqrst\\uvxyz 1234567890";
-const char text[] = "10 print\\2\\raspi64 rules ok\\2\\  \n\n"
-			"20 i=5 \n\n"
+//const char text[] = "print\\2\\raspi64 rules ok\\2\\  \n\n" "20 i=5 \n\n" "run\n";
+/*
+const char* text = 	"print 1+3\n"
+			"10 i=64\n"
+			"20 print i\n"
 			"run\n";
+*/
 
+const char* text =
+"10 i=0\n"                                  
+"20 print\\2\\raspi64 rules ok\\12\\\n"             
+"30 i=i+1\n"                                
+"40 ifi\\,\\10thengoto20\n"                     
+"run\n";
 
 void autoKeybSelectColumn(byte column) {
 	selectedColumn = column;
@@ -29,15 +39,15 @@ byte autoKeybReadRow() {
 		runIndex++;
 	}
 	
-	if(keyDown>15 && !finished && shifted && (selectedColumn==0 || selectedColumn==keyCols['\\'])) {
+	if(keyDown>20 && !finished && shifted && (selectedColumn==0 || selectedColumn==keyCols['\\'])) {
 		return keyRows['\\'];
 	}
 
 	if(keyDown++==0) runIndex++;
 
-	if(keyDown>35) keyDown=0;
+	if(keyDown>40) keyDown=0;
 
-	if(keyDown>15 && !finished && (selectedColumn==0 || selectedColumn==keyCols[text[runIndex]])) {
+	if(keyDown>20 && !finished && (selectedColumn==0 || selectedColumn==keyCols[text[runIndex]])) {
 		if(text[runIndex]==0)
 			finished=1;
 		else {
