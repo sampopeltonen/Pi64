@@ -202,7 +202,7 @@ void mneADC(int am, int cycles) {
 	// Use ~(a & b) or (~a | ~b) for (a NAND b) 
 	byte V = (((bA8 ^ bB8) & bC7) ^ ((~(bA8 & bB8)) ^ bC7));   // inverted result
 
-	(V==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+	((V & B8)==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 
 	if(B8 == (B8 & A)) setPFlag(PFLAG_NEGATIVE);
 	else clearPFlag(PFLAG_NEGATIVE);
@@ -650,7 +650,7 @@ void mneLSR(int am, int cycles) {
 }
 
 void mneNOP(int am, int cycles) {
-  printf1("NOP not implemented. PC=%x",PC); exit(1);
+  	cyc = cycles;
 }
 
 void mneORA(int am, int cycles) {
@@ -766,9 +766,6 @@ void mneRTS(int am, int cycles) {
 extern void printProcessorStatus();
 
 void mneSBC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("SBC ");
-	#endif
 	word target;
 	cyc=cycles + resolveAddressModeTarget(am, &target);
 	byte tmp;
@@ -778,26 +775,36 @@ void mneSBC(int am, int cycles) {
 		exit(1);
 	}
 	else {
-		#if DEBUG_6510
-		printf("value %x ", memReadByte(target));
-		#endif
 
 		tmp = memReadByte(target) + ((P & PFLAG_CARRY) ? 0 : 1);
-
 		(tmp>A) ? clearPFlag(PFLAG_CARRY) : setPFlag(PFLAG_CARRY);
 
-		// V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
+		// V formula in SBC differs little bit from what it's in ADC
+		// this is ADC formula: V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
 		
 		byte bA8 = (A & B8);
-		byte bB8 = (tmp & B8);
+		//byte bB8 = (tmp & B8);		// ADC version
+		byte bB8 = ((255-tmp) & B8);		// SBC version
 
 		A = A - tmp;
 		
 		byte bC7 = ((A & B7) << 1);  // shifted to 8 position
 		// Use ~(a & b) or (~a | ~b) for (a NAND b) 
+		/*
+		A8 = 0
+		B8 = 0
+		C7 = 1
+		
+		V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
+		V = not (((0 NOR 0) and 1) NOR ((0 NAND 0) NOR 1))
+		V = not ((1 and 1) NOR (1 NOR 1))
+		V = not (1 NOR 0)
+		V = not 0
+		V = 1
+		*/
 		byte V = (((bA8 ^ bB8) & bC7) ^ ((~(bA8 & bB8)) ^ bC7));   // inverted result
 
-		(V==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+		((V & B8)==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 		(A & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
 		(A==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
 	}
@@ -1224,15 +1231,15 @@ void mos6510_cycle() {
 	
 		////// breakpoint debugging  //////
 		
-		//if(PC==0xeab6 /* && Y==0x10) || yesDump>0*/) {
-		//	yesDump++;
+		if(PC==0xa7ed || PC==0xa7f1 /*yesDump>0*/) {
+			yesDump++;
 		//	printf1("Y=%x",Y);
-			//if(yesDump==0x1) {
-		//		printProcessorStatus();
-				//exit(1);
+			//if(yesDump==0x10) {
+				printProcessorStatus();
+			//	exit(1);
 			//}
 			//if(yesDump>100) yesDump=1;
-		//}
+		}
 		byte opCode = readMemoryPC();
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
