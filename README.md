@@ -9,11 +9,11 @@ This is a hobby project for me to learn both the ARM assembly and the internals 
 
 The project is on quite early state and **is not yet a functional C64 emulator**.
 
-Current status is that the default VIC text mode works barely enough that the C64 screen is successfully outputted and C64 kernal boot process runs through and startup messages are visible.
+Current status is that the machine boots, shows standard startup messages and is able to run basic programs. Only the default VIC text mode somewhat works.
 
-CIA chips are work in progress but they are now partly functional: timers somewhat work, interrupts are generated and handled by the main processsor so finally there's the blinking cursor.
+CIA chips are work in progress and they are now partly functional: timers somewhat work, interrupts are generated and handled by the main processsor and input/output with a (virtual) keyboard works.
 
-There's no keyboard, not even Raspberry Pi level USB driver for any keyboard to connect to, but for testing purposes there's an automatic keyboard typist that types some test material on screen right after startup messages.
+So actually there's no keyboard, not even Raspberry Pi level USB driver for any keyboard to connect to, but for testing purposes there's an automatic keyboard typist that types some test material (through CIA-1 implementation) right after startup messages.
 
 SID chip (sound) is totally out of scope for any time soon.
 
