@@ -306,10 +306,10 @@ void mneBIT(int am, int cycles) {
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
-	byte t = A & memReadByte(target);
-	(t==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+	byte t = memReadByte(target);
 	((t & B7)==B7) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 	((t & B8)==B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
+	((A&t)==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
 	//setZeroAndNegativePFlags(&t);  this is not true
 }
 
@@ -709,6 +709,7 @@ void mneROL(int am, int cycles) {
 		if((A & B8)==B8) tmpbit = 1;
 		A = (A << 1) & 0xfe;
 		if((P & PFLAG_CARRY)==PFLAG_CARRY) A = (A | B1);
+		setZeroAndNegativePFlags(&A);
 	}
 	else {
 		resolveAddressModeTarget(am, &target);
@@ -716,6 +717,7 @@ void mneROL(int am, int cycles) {
 		if((tmpb & B8)==B8) tmpbit = 1;
 		tmpb = (tmpb << 1) & 0xfe;
 		if((P & PFLAG_CARRY)==PFLAG_CARRY) tmpb = (tmpb | B1);
+		setZeroAndNegativePFlags(&tmpb);
 		memWriteByte(target, tmpb);
 	}
 
@@ -1231,15 +1233,22 @@ void mos6510_cycle() {
 	
 		////// breakpoint debugging  //////
 		
-		if(PC==0xa7ed || PC==0xa7f1 /*yesDump>0*/) {
-			yesDump++;
-		//	printf1("Y=%x",Y);
-			//if(yesDump==0x10) {
-				printProcessorStatus();
-			//	exit(1);
+		//if(PC==0xa57c || yesDump>0) {
+			//if(yesDump==0) {
+				//printf3("$200-> %x %x %x", memReadByte(0x200),memReadByte(0x201),memReadByte(0x202) );
+				//printf3("$203-> %x %x %x", memReadByte(0x203),memReadByte(0x204),memReadByte(0x205) );
+				//printProcessorStatus();
+				//exit(1);
 			//}
+		//	yesDump++;
+		//	printf1("Y=%x",Y);
+			/*if(yesDump==0x9af) {
+				printf3("$62-> %x %x %x", memReadByte(0x62),memReadByte(0x63),memReadByte(0x64) );
+				printProcessorStatus();
+				//exit(1);
+			}*/
 			//if(yesDump>100) yesDump=1;
-		}
+		//}
 		byte opCode = readMemoryPC();
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
