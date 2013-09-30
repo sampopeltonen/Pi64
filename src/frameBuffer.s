@@ -60,14 +60,23 @@ InitialiseFrameBuffer:
 	movhi result,#0
 	movhi pc,lr
 
-	push {r4,lr}			
+	push {r4,lr}
+	/*push {r5,r6}
+	vWidth .req r5
+	vHeight .req r6
+	mov vWidth,#1024
+	mov vHeight,#768*/
 	fbInfoAddr .req r4
 	ldr fbInfoAddr,=FrameBufferInfo
-	str width,[r4,#0]
-	str height,[r4,#4]
-	str width,[r4,#8]
-	str height,[r4,#12]
+	str width,[r4,#0]     /* phys */
+	str height,[r4,#4]    /* phys */
+	str width,[r4,#8]     /* virt */
+	str height,[r4,#12]   /* virt */
 	str bitDepth,[r4,#20]
+
+	/*.unreq vWidth
+	.unreq vHeight
+	pop {r5,r6}*/
 	.unreq width
 	.unreq height
 	.unreq bitDepth
