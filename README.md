@@ -3,7 +3,7 @@ Pi64
 
 This project is about emulating Commodore 64 on cheap card size computer Raspberry Pi without any actual operating system on the machine.
 
-![screenshot](http://raw.github.com/sampopeltonen/pi64/master/ScreenShot.png)
+![screenshot](https://raw.github.com/sampopeltonen/pi64/master/ScreenShot.png)
 
 This is a hobby project for me to learn both the ARM assembly and the internals of the legendary home computer C64.
 
