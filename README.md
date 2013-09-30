@@ -1,5 +1,5 @@
-raspi64
-=======
+Pi64
+====
 
 This project is about emulating Commodore 64 on cheap card size computer Raspberry Pi without any actual operating system on the machine.
 
