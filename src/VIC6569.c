@@ -393,12 +393,15 @@ void mainLoop() {
 
 
 int vicmain(void) {
-	setupScreen(1024,768,16);
+	//setupScreen(1024,768,16);
 	//setupScreen(640,480,16);
+	//setupScreen(320,240,16);
+	setupScreen(400,300,16);
+	
 	init_stdlibtools();
 	//printf("init keyboard...");
 	//initKeyboard();
-	printf("raspi64 started");
+	printf("* Pi64 *");
 	
 	vic6569_init();
 	//monitor_init();
