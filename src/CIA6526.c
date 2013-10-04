@@ -11,7 +11,8 @@
 #include "types.h"
 #include "CIA6526.h"
 #include "stdlibtools.h"
-#include "autotestkeyboard.h"
+//#include "autotestkeyboard.h"
+#include "C64Keyboard.h"
 
 typedef struct {
 	/* addresses actually only needed for debugging purposes, TODO: remove later */
@@ -125,29 +126,17 @@ void portBDataDirRegWrite(cia_state* cia, byte data, word address) {
 	//printf2("CIA-%d portB d.dir reg write %x",cia->cia_number,data);
 }
 
-//byte keybCol;
-//byte keyDown;
-//byte nokey = 0x0;
 void portAWrite(cia_state* cia, byte data, word address) {
 	if(cia->cia_number==1) {
-		autoKeybSelectColumn(data);
-		//keybCol = data;
-		//printf2("CIA-%d portA write %x",cia->cia_number,data);
+		C64Keyboard_writeValue(~data);
+		//autoKeybSelectColumn(data);
 	}
-	// testing 
 }
 
 byte portBRead(cia_state* cia, word address) {
-	if(/*keyDown++>200 &&*/ cia->cia_number==1) {
-		return autoKeybReadRow();	
-		/*if(keybCol==0) {
-			// kernal is checking if anything is pressed (non-ff input)
-			return 1;
-		}
-		if(keybCol==0b11101111) {
-			printf1("portB read %x",0b11101111);
-			return(0b11101111); // V,B,N tai M
-		}*/
+	if(cia->cia_number==1) {
+		return ~C64Keyboard_readValue();
+		//return autoKeybReadRow();	
 	}
 	
 	return 0xff;
@@ -208,6 +197,6 @@ void cia_init() {
 	ciaReg[0xf].write = &timerBControlRegWrite;
 	ciaReg[0xf].read  = &unimplementedRegisterRead;
 
-	autoKeybInit();
+	//autoKeybInit();
 }
 

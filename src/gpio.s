@@ -116,3 +116,45 @@ SetGpio:
 	.unreq setBit
 	.unreq gpioAddr
 	pop {pc}
+
+
+
+/*
+GetGpio function added by Sampo Peltonen, partly copy-paste from SetGpio above.
+*/
+.globl GetGpio
+GetGpio:
+    pinNum .req r0
+
+        cmp pinNum,#53
+        movhi pc,lr
+        push {lr}
+        mov r2,pinNum
+	.unreq pinNum
+	pinNum .req r2
+        bl GetGpioAddress
+	gpioAddr .req r0
+
+        pinBank .req r3
+        lsr pinBank,pinNum,#5
+        lsl pinBank,#2
+        add gpioAddr,pinBank
+        .unreq pinBank
+
+        and pinNum,#31
+        getBit .req r3
+        mov getBit,#1
+        lsl getBit,pinNum
+        .unreq pinNum
+	readVal .req r2
+
+        ldr readVal,[gpioAddr,#52]
+        .unreq gpioAddr
+	and readVal,getBit
+	teq readVal,#0
+	moveq r0,#0
+	movne r0,#1
+        .unreq getBit
+	.unreq readVal
+        pop {pc}
+
