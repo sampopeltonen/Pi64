@@ -14,7 +14,7 @@ char stringBuf[STR_MAX_LEN];
 unsigned int vpos;
 
 void init_stdlibtools() {
-	vpos = 10;
+	vpos = 0;
 }
 
 
@@ -37,7 +37,7 @@ void outputBuffer(unsigned int len) {
 	DrawString(stringBuf, len, 320, vpos);
 	vpos+=16;
 	//if(vpos>460) vpos=10;
-	if(vpos>750) vpos=10;
+	if(vpos>250) vpos=0;
 }
 
 // TODO: stdlib replacement stuff
