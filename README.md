@@ -13,9 +13,11 @@ The project is a work in progress and **is not yet a fully functional C64 emulat
 
 The current status is that the machine boots up properly and is able to run at least simple basic programs. The default VIC text mode somewhat works, but it's still without borders.
 
-I have designed a small adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schematics for the adapter as soon as I have them drawn somehow.
+I have designed a small adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schema for the adapter here as soon as I have it drawn somehow.
 
-![screenshot](https://raw.github.com/sampopeltonen/pi64/master/docs/konehuone.png)
+![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/konehuone.png) |
+----|
+**Commodore 64 keyboard connected to Raspberry Pi through the adapter. (Keyrah on the right has currently nothing to do with the project)** |
 
 CIA chips are partly functional: timers somewhat work, interrupts based on timers are generated (and handled by the processsor) and input/output with the keyboard (through the adapter) works.
 
