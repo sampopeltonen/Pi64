@@ -17,6 +17,7 @@
 #include "ioregarea.h"
 #include "rasterlinetiming.h"
 #include "stdlibtools.h"
+#include "C64Keyboard.h"
 //#include "usbkeyboard.h"
 //#include "monitor.h"
 
@@ -408,6 +409,8 @@ int vicmain(void) {
 	mos6510_init();
 	//printf("initialization done");
 	//printf("start main loop");
+
+	C64Keyboard_init();
 	mainLoop();
 
 	//SDL_Quit();
