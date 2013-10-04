@@ -3,9 +3,9 @@ Pi64
 
 This project is about emulating Commodore 64 on a low-cost, card size computer, Raspberry Pi without any operating system on the machine. So it's running, as they say, on "bare metal".
 
-![screenshot](https://raw.github.com/sampopeltonen/pi64/master/ScreenShot.png)
-
-Nice thing with running on bare metal is that the program starts instantly when you switch the power on.
+![screenshot](https://raw.github.com/sampopeltonen/pi64/master/ScreenShot.png)|
+-------|
+___Nice thing with running on bare metal is that the program starts instantly when you switch the power on.___|
 
 ### Current Status
 
@@ -15,17 +15,18 @@ The current status is that the machine boots up properly and is able to run at l
 
 I have designed a small adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schema for the adapter here as soon as I have it drawn somehow.
 
-![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/konehuone.png) |
-----|
-**Commodore 64 keyboard connected to Raspberry Pi through the adapter. (Keyrah on the right has currently nothing to do with the project)** |
-
 CIA chips are partly functional: timers somewhat work, interrupts based on timers are generated (and handled by the processsor) and input/output with the keyboard (through the adapter) works.
 
 SID chip (sound) is out of the scope for any time soon.
 
 VIC chip needs much additional work.
 
-Emulation speed is faster than real-time, about 110%. Needs further optimizing.
+Emulation speed is currently little bit faster than real-time, but there's still room for some optimization.
+
+![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/konehuone.png) |
+----|
+___Commodore 64 keyboard connected to Raspberry Pi through the adapter. (Keyrah on the right has currently nothing to do with this project)___ |
+
 
 ### Compilation and installation
 
