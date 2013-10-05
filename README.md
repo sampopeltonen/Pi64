@@ -1,11 +1,11 @@
 Pi64
 ====
 
-This project is about emulating Commodore 64 on a low-cost, card size computer, Raspberry Pi without any operating system on the machine. So it's running, as they say, on "bare metal".
+This project is about emulating Commodore 64 on a low-cost, card size computer, Raspberry Pi without any operating system on the machine. So it's running on "bare metal".
 
 ![screenshot](https://raw.github.com/sampopeltonen/pi64/master/ScreenShot.png)|
 -------|
-___Nice thing with running on bare metal is that the program starts instantly when you switch the power on.___|
+___Nice thing with a program running on bare metal is that it starts instantly when you switch on the power.___|
 
 ### Current Status
 
