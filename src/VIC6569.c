@@ -20,6 +20,7 @@
 #include "C64Keyboard.h"
 //#include "usbkeyboard.h"
 //#include "monitor.h"
+//#include "testsuite.h"
 
 // pal specific stuff
 #define RASTER_LINES 312
@@ -411,6 +412,7 @@ int vicmain(void) {
 	//printf("start main loop");
 
 	C64Keyboard_init();
+
 	mainLoop();
 
 	//SDL_Quit();

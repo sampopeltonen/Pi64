@@ -10,6 +10,7 @@
 
 #include "C64Keyboard.h"
 #include "stdlibtools.h"
+#include "testsuite.h"
 
 #include "types.h"
 
@@ -26,8 +27,11 @@ extern unsigned int GetGpio(unsigned int pin);			// gpio.s
 
 int lastOperationRead = 0;
 byte lastReadValue=0;
+byte lastWriteValue=0;
+int f7ActionStarting=0;
 
 void C64Keyboard_writeValue(byte value) {
+	lastWriteValue=value;
 	int i;
 	int bitscan = 1;
 
@@ -74,6 +78,33 @@ byte C64Keyboard_readValue() {
 	}
 	lastOperationRead=1;
 	lastReadValue=value;
+
+	/* some debug action key handling below */
+	if(lastWriteValue==0x1) { 
+		if(lastReadValue==0x8) {
+			// F7 down, F7 action starts when it's up
+			f7ActionStarting=1;
+		}
+	}
+	if(f7ActionStarting && lastWriteValue==0xff && lastReadValue==0) {
+		printf("F7 action");
+		f7ActionStarting=0;
+		testsuite_loadNext();
+	}
+	/*
+	if(lastWriteValue==0x40) { 
+		if(lastReadValue==0x8) {
+			// F5 down, F5 action starts when it's up
+			f5ActionStarting=1;
+		}
+	}
+	if(f5ActionStarting && lastWriteValue==0xff && lastReadValue==0) {
+		printf("F5 action");
+		f5ActionStarting=0;
+		//testsuite_loadNext();
+	}*/
+	
+
 	return value;
 }
 

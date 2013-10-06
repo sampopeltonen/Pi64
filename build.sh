@@ -32,6 +32,9 @@ arm-none-eabi-gcc $CC_OPTS -c src/C64Keyboard.c -o obj/C64Keyboard.o
 arm-none-eabi-as src/roms.s -o obj/roms.o    # C64 rom images
 arm-none-eabi-as src/cathoderay.s -o obj/cathoderay.o
 arm-none-eabi-as src/C64KeyboardPins.s -o obj/C64KeyboardPins.o
+arm-none-eabi-as src/testsuite_bin.s -o obj/testsuite_bin.o
+arm-none-eabi-gcc $CC_OPTS -c src/testsuite.c -o obj/testsuite.o
+
 
 # link
 arm-none-eabi-ld -T lscript obj/bootstrap.o \
@@ -49,6 +52,8 @@ obj/stdlibtools.o \
 obj/C64KeyboardPins.o \
 obj/C64Keyboard.o \
 obj/roms.o \
+obj/testsuite_bin.o \
+obj/testsuite.o \
 -o kernel.elf
 
 # -L. -lcsud 
