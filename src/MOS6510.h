@@ -15,5 +15,6 @@ void mos6510_init();
 void mos6510_cycle();
 void mos_irq();
 void mos_nmi();
+void printProcessorStatus();
 
 #endif /*MOS6510_H_*/

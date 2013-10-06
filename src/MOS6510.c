@@ -56,6 +56,8 @@ int cyc = 0;
 int irqLineUp;
 int nmiLineUp;
 
+int yesDump;
+
 typedef struct {
 	void (*pt2MnemonicHandler)(int, int);
 	int am;
@@ -169,49 +171,43 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 
 
 
-
-
-
 void mneILL(int am, int cycles) {
 	printf2("Illegal opcode %x. PC=%x", memReadByte(PC-1),PC-1);
 	exit(0);
 }
 
 void mneADC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("ADC ");
-    #endif
 	word target;
+
 	cyc = cycles + resolveAddressModeTarget(am, &target);
-	word tmp = memReadByte(target) + ((P & PFLAG_CARRY) ? 1 : 0);
-
-	if((P & PFLAG_DECIMAL)==PFLAG_DECIMAL) {
-		printf("ADC decimal mode not implemented.");
-		exit(1);
-	}
-
-	// V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
-	
-	byte bA8 = (A & B8);
-	byte bB8 = (tmp & B8);
-	
+	byte targetValue = memReadByte(target);
+	word tmp = targetValue + ((P & PFLAG_CARRY) ? 1 : 0);
 	word t = A + tmp;
-	A = t & 0xff;
-
-	byte bC7 = ((A & B7) << 1);  // shifted to 8 position
-	// Use ~(a & b) or (~a | ~b) for (a NAND b) 
-	byte V = (((bA8 ^ bB8) & bC7) ^ ((~(bA8 & bB8)) ^ bC7));   // inverted result
-
-	((V & B8)==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
-
-	if(B8 == (B8 & A)) setPFlag(PFLAG_NEGATIVE);
-	else clearPFlag(PFLAG_NEGATIVE);
-
-	if(t==0) setPFlag(PFLAG_ZERO);
+	// V flag according to http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+	((A^t)&(tmp^t)&0x80) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+	if((t&0xff)==0) setPFlag(PFLAG_ZERO);
 	else clearPFlag(PFLAG_ZERO);
 
-	if(t>0xff) setPFlag(PFLAG_CARRY);
-	else clearPFlag(PFLAG_CARRY);
+	if(P & PFLAG_DECIMAL) {
+		// Decimal mode according to http://www.6502.org/tutorials/decimal_mode.html
+		word tmpA = A;
+		word AL = (tmpA & 0xf) + (targetValue & 0xf) + ((P & PFLAG_CARRY) ? 1 : 0);
+		if(AL>=0xa) AL = ((AL + 0x6) & 0xf) + 0x10;
+		tmpA = (tmpA & 0xf0) + (targetValue & 0xf0) + AL;
+		if(B8 & tmpA) setPFlag(PFLAG_NEGATIVE);
+		else clearPFlag(PFLAG_NEGATIVE);
+		if(tmpA >= 0xa0) tmpA = tmpA + 0x60;
+		A = tmpA & 0xff;
+		if(tmpA>=0x100) setPFlag(PFLAG_CARRY);
+		else clearPFlag(PFLAG_CARRY);
+	}
+	else {
+		A = t & 0xff;
+		if(B8 & A) setPFlag(PFLAG_NEGATIVE);
+		else clearPFlag(PFLAG_NEGATIVE);
+		if(t>0xff) setPFlag(PFLAG_CARRY);
+		else clearPFlag(PFLAG_CARRY);
+	}
 }
 
 void mneAND(int am, int cycles) {
@@ -383,15 +379,21 @@ void mneBPL(int am, int cycles) {
 }
 
 void mneBRK(int am, int cycles) {
+	// TODO: check when writing P to stack should set B flag?
 	printf1("BRK %x not implemented.\n",am); 
 	printf1("PC=%x",PC);
 	exit(1);
 }
 
 void mneBVC(int am, int cycles) {
-	// the BVC instruction will take 3 cycles no matter what address it is located at.
-	// tarkista toi, ei taida pitää paikkaansa
-  printf("BVC not implemented.\n"); exit(1);
+        cyc = cycles;
+        sbyte offset = (sbyte) readMemoryPC();
+        if((P & PFLAG_OVERFLOW)==0) {
+                cyc++;
+                word newLoc = PC + offset;
+                if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
+                PC = newLoc;
+        }
 }
 
 void mneBVS(int am, int cycles) {
@@ -409,30 +411,16 @@ void mneBVS(int am, int cycles) {
 }
 
 void mneCLC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("CLC ");
-	#endif
 	cyc = cycles;
 	clearPFlag(PFLAG_CARRY);
 }
 
 void mneCLD(int am, int cycles) {
-	#if DEBUG_6510
-	printf("CLD ");
-	#endif
 	cyc = cycles;
-	if(am==IMPLIED)
-		clearPFlag(PFLAG_DECIMAL);
-	else {
-		printf1("CLD addressing mode not implemented: %d\n", am);
-		exit(1);
-	}
+	clearPFlag(PFLAG_DECIMAL);
 }
 
 void mneCLI(int am, int cycles) {
-	#if DEBUG_6510
-	printf("CLI ");
-	#endif
 	cyc = cycles;
 	clearPFlag(PFLAG_IRQ);
 }
@@ -442,9 +430,6 @@ void mneCLV(int am, int cycles) {
 }
 
 void mneCMP(int am, int cycles) {
-	#if DEBUG_6510
-	printf("CMP ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	byte value = memReadByte(target);
@@ -672,34 +657,23 @@ void mnePHA(int am, int cycles) {
 }
 
 void mnePHP(int am, int cycles) {
-	#if DEBUG_6510
-	printf("PHP ");
-	#endif
 	cyc = cycles;
-	stackPush(P);
+	//TODO: check if this setting B flag is correct?
+	stackPush(P|PFLAG_BREAK);
 }
 
 void mnePLA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("PLA ");
-	#endif
 	cyc = cycles;
 	A = stackPull();
 	setZeroAndNegativePFlags(&A);
 }
 
 void mnePLP(int am, int cycles) {
-	#if DEBUG_6510
-	printf("PLP ");
-	#endif
 	cyc = cycles;
-	P = stackPull();
+	P = (stackPull()|PFLAG_UNUSED); // the unused flag is supposed to be 1
 }
 
 void mneROL(int am, int cycles) {
-	#if DEBUG_6510
-	printf("ROL ");
-	#endif
 	cyc = cycles;
 	word target;
 	byte tmpb;
@@ -771,10 +745,28 @@ void mneSBC(int am, int cycles) {
 	word target;
 	cyc=cycles + resolveAddressModeTarget(am, &target);
 	byte tmp;
-	if((P & PFLAG_DECIMAL) == PFLAG_DECIMAL) {
-		printf("decimal mode not implemented.");
-		//tmp = 0; // silence compiler warning
-		exit(1);
+	if(P & PFLAG_DECIMAL) {
+		/* A:
+		3a. AL = (A & $0F) - (B & $0F) + C-1
+		3b. If AL < 0, then AL = ((AL - $06) & $0F) - $10
+		3c. A = (A & $F0) - (B & $F0) + AL
+		3d. If A < 0, then A = A - $60
+		3e. The accumulator result is the lower 8 bits of A
+		*/	
+		sword tmpA = A;
+		byte targetValue = memReadByte(target);
+		sbyte AL = (tmpA & 0xf) - (targetValue & 0xf) + ((P & PFLAG_CARRY) ? 1 : 0)-1;
+		if(AL<0) AL = ((AL - 0x6) & 0xf) - 0x10;
+		tmpA = (A & 0xf0) - (targetValue & 0xf0) + AL;
+		if(tmpA<0) tmpA = tmpA - 0x60;
+		A = tmpA & 0xff; 
+
+		//TODO: C N V Z should be calculated as in "bin" mode (?)
+		// http://www.6502.org/tutorials/decimal_mode.html
+		
+		//printf("SBCd");
+		//printf1("V=%x",(P&PFLAG_OVERFLOW?1:0));
+
 	}
 	else {
 
@@ -809,6 +801,8 @@ void mneSBC(int am, int cycles) {
 		((V & B8)==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 		(A & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
 		(A==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
+		//printf("SBCd");
+		//printf1("V=%x",(P&PFLAG_OVERFLOW?1:0));
 	}
 }
 
@@ -821,7 +815,7 @@ void mneSEC(int am, int cycles) {
 }
 
 void mneSED(int am, int cycles) {
-  printf("SED not implemented.\n"); exit(1);
+  printf("SED not implemented."); exit(1);
 }
 
 void mneSEI(int am, int cycles) {
@@ -1006,7 +1000,7 @@ void initMnemonicArray() {
 	i=0x4f; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x50; mneAM[i].pt2MnemonicHandler = &mneBVC; mneAM[i].cycles = 2; mneAM[i].am = RELATIVE;
 	i=0x51; mneAM[i].pt2MnemonicHandler = &mneEOR; mneAM[i].cycles = 5; mneAM[i].am = INDIRECT_Y;
-	i=0x52; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x52; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;  // JAM?
 	i=0x53; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x54; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x55; mneAM[i].pt2MnemonicHandler = &mneEOR; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
@@ -1188,6 +1182,7 @@ void mos_irq() {
 }
 
 void mos_nmi() {
+	// TODO: remember NMI writes 0 break flag to stack
 	printf("NMI");
 	nmiLineUp=1;
 	exit(1);
@@ -1197,7 +1192,7 @@ void initRegisters() {
 	A = 0x0;
 	X = 0x0;
 	Y = 0x0;
-	P = 0x0;
+	P = 0b00100000;
 	PC = memReadWord(0xfffc); //load the address from FFFC (kernal rom)
 	S = 0x00;
 }
@@ -1210,12 +1205,12 @@ void reset() {
 
 
 void printProcessorStatus() {
-	printf2("PC=%x  A=%x",PC,A);
-	printf2(" X=%x  Y=%x",X,Y);
-	printf2(" P=%x  S=%x",P,S);
+	printf1("PC=%x",PC);
+	printf1("A=%x",A);
+	printf2("X=%x Y=%x",X,Y);
+	printf2("P=%x S=%x",P,S);
 }
 
-int yesDump;
 void mos6510_cycle() {
 	if(cyc--<=0) {
 
@@ -1225,7 +1220,7 @@ void mos6510_cycle() {
 				stackPush(PC >> 8);
 				stackPush(PC);
 				//printf1("IRQ pushed PC %x to stack",PC);
-				stackPush(P);
+				stackPush(P&~PFLAG_BREAK);
 				PC = memReadWord(0xfffe);
 			}
 			irqLineUp=0;
@@ -1249,6 +1244,25 @@ void mos6510_cycle() {
 			}*/
 			//if(yesDump>100) yesDump=1;
 		//}
+		/*
+		if(PC==0x897 && (A&PFLAG_DECIMAL)) {
+			printf("push PwD");
+			printProcessorStatus();
+			exit(1);
+		}
+
+		if(P&PFLAG_DECIMAL) {
+			printf1("D-PC=%x",PC);
+			printProcessorStatus();
+			exit(1);
+		}		
+		*/
+		/*
+		if(A==0 && X==0xb1 && Y==0x6c && S==0xf6) {
+			printProcessorStatus();
+			exit(1);
+		}*/
+
 		byte opCode = readMemoryPC();
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
