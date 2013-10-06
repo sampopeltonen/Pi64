@@ -117,7 +117,7 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 			break;
 		case ZEROPAGE_X:
 			oper1 = readMemoryPC();
-			*targetAddress = oper1+X;
+			*targetAddress = (oper1+X) & 0xff;
 			break;
 		case ABSOLUTE:
 			oper1 = readMemoryPC();
