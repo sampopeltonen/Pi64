@@ -1,0 +1,252 @@
+C64 Emulator Test Suite - Public Domain, no Copyright
+
+The purpose of the C64 Emulator Test Suite is to
+- help C64 emulator authors improve their compatibility
+- ensure that update versions have no new bugs in old code parts
+
+The suite are a few hundred C64 programs which check the details of the C64 they are running on. The suite runs automated and stops only if it has detected an error. That the suite doesn't stop on my C64-I/PAL proves that the suite has no bugs. That the same suite doesn't stop on an emulator proves that this particular emulator is compatible to my C64 regarding every tested detail. Of course, the emulator may still have bugs in parts which are not tested by the suite. There may also be a difference between your C64 and my C64.
+
+While the Test Suite is running, the datasette should be disconnected.
+
+
+
+Program _START - some 6510 basic commands, just as an insurance
+
+
+
+Programs LDAb to SBCb(EB) - 6510 command function
+
+addressing modes
+-----------------------------------
+n   none (implied and accu)
+b   byte (immediate)
+w   word (absolute for JMP and JSR)
+z   zero page
+zx  zero page,x
+zy  zero page,y
+a   absolute
+ax  absolute,x
+ay  absolute,y
+i   indirect (JMP)
+ix  (indirect,x)
+iy  (indirect),y
+r   relative
+
+Display:
+before  data  accu xreg yreg  flags  sp
+after   data  accu xreg yreg  flags  sp
+right   data  accu xreg yreg  flags  sp
+
+Either press STOP or any other key to continue.
+
+All 256 opcodes are tested except HLTn (02 12 22 32 42 52 62 72 92 B2 D2 F2).
+
+Indexed addressing modes count the index registers from 00 to FF.
+
+JMPi (xxFF) is tested.
+
+Single operand commands: 256 data combinations from 00 to FF multiplied by 256 flag combinations.
+
+Two operand commands: 256 data combinations 00/00, 00/11, ... FF/EE, FF/FF multiplied by 256 flag combinations.
+
+ANEb, LASay, SHAay, SHAiy, SHXay, SHYax and SHSay are executed only in the y border. These commands cause unpredictable results when a DMA comes between the command byte and the operand.
+
+SHAay, SHAiy, SHXay, SHYax and SHSay are tested on a data address xxFF only. When the hibyte of the indexed address needs adjustment, these commands will write to different locations, depending on the data written.
+
+
+
+Programs TRAP* - 6510 IO traps, page boundaries and wrap arounds
+
+ #  code  data  zd  zptr   aspect tested
+-----------------------------------------------------------------------------
+ 1  2800  29C0  F7  F7/F8  basic functionality
+ 2  2FFE  29C0  F7  F7/F8  4k boundary within 3 byte commands
+ 3  2FFF  29C0  F7  F7/F8  4k boundary within 2 and 3 byte commands
+ 4  D000  29C0  F7  F7/F8  IO traps for code fetch
+ 5  CFFE  29C0  F7  F7/F8  RAM/IO boundary within 3 byte commands
+ 6  CFFF  29C0  F7  F7/F8  RAM/IO boundary within 2 and 3 byte commands
+ 7  2800  D0C0  F7  F7/F8  IO traps for 16 bit data access
+ 8  2800  D000  F7  F7/F8  IO trap adjustment in ax, ay and iy addressing
+ 9  2800  29C0  02  F7/F8  wrap around in zx and zy addressing
+10  2800  29C0  00  F7/F8  IO traps for 8 bit data access
+11  2800  29C0  F7  02/03  wrap around in ix addressing
+12  2800  29C0  F7  FF/00  wrap around and IO trap for pointer accesses
+13  2800  0002  F7  F7/F8  64k wrap around in ax, ay and iy addressing
+14  2800  0000  F7  F7/F8  64k wrap around plus IO trap
+15  CFFF  D0C6  00  FF/00  1-14 all together as a stress test
+16  FFFE  ----  --  --/--  64k boundary within 3 byte commands
+17  FFFF  ----  --  --/--  64k boundary within 2 and 3 byte commands
+
+In the programs TRAP16 and TRAP17, the locations of data, zerodata and zeroptr depend on the addressing mode. The CPU port at 00/01 is not able to hold all 256 bit combinations.
+
+The datasette may not be connected while TRAP16 and TRAP17 are running!
+
+Display:
+after   data  accu xreg yreg  flags
+right   data  accu xreg yreg  flags
+
+If all displayed values match, some other aspect is wrong, e.g. the stack pointer or data on stack.
+
+All 256 commands are tested except HLTn. Registers before:
+data   1B (00 01 10 11)
+accu   C6 (11 00 01 10)
+xreg   B1 (10 11 00 01)
+yreg   6C (01 10 11 00)
+flags  00
+sptr   not initialized, typical F8
+
+The code length is 6 bytes maximum (SHSay).
+
+When the lowbyte of the data address is less than C0, SHAay, SHAiy, SHXay, SHYax and SHSay aren't tested. Those commands don't handle the address adjustment correctly.
+
+Relative jumps are tested in 4 combinations: offset 01 no jump, offset 01 jump, offset 80 no jump, offset 80 jump. For the offset 80, a RTS is written to the location at code - 7E.
+
+
+
+Program BRANCHWRAP - Forward branch from FFxx to 00xx
+
+Backward branches from 00xx to FFxx were already tested in TRAP16 and TRAP17.
+
+
+
+Program MMUFETCH - 6510 code fetching while memory configuration changes
+
+An example is the code sequence LDA #$37 : STA 1 : BRK in RAM at Axxx. Because STA 1 maps the Basic ROM, the BRK will never get executed.
+
+addr  sequence
+---------------------
+A4DF  RAM-Basic-RAM
+B828  RAM-Basic-RAM
+EA77  RAM-Kernal-RAM
+FD25  RAM-Kernal-RAM
+D400  RAM-Charset-RAM
+D000  RAM-IO-RAM
+
+The sequence IO-Charset-IO is not tested because I didn't find appropriate code bytes in the Charset ROM at D000-D3FF. The SID registers at D4xx are write-only.
+
+
+
+Program MMU - 6510 port at 00/01 bits 0-2
+
+Display:
+0/1=0-7 repeated 6 times: values stored in 0 and 1
+after  0 1  A000 E000 D000 IO
+right  0 1  A000 E000 D000 IO
+
+address  value   meaning
+----------------------------------------
+A000     94      read Basic, write RAM
+A000     01      read/write RAM
+E000     86      read Kernal, write RAM
+E000     01      read/write RAM
+D000/IO  3D/02   read Charset, write RAM
+D000/IO  01/02   read/write RAM
+D000/IO  00/03   read/write IO
+
+
+
+Program CPUPORT - 6510 port at 00/01 bits 0-7
+
+Display:
+0/1=00/FF repeated 6 times: values stored in 0 and 1
+after  00 01 
+right  00 01 
+
+The datasette may not be connected while CPUPORT is running!
+
+If both values match, the port behaves instable. On my C64, this will only happen when a datasette is connected.
+
+
+
+Program CPUTIMING - 6510 timing whole commands
+
+Display:
+xx command byte
+clocks  #measured
+right   #2
+
+#1  #2  command or addressing mode
+--------------------------------------
+2   2   n
+2   2   b
+3   3   Rz/Wz
+5   5   Mz
+4   8   Rzx/Rzy/Wzx/Wzy
+6   10  Mzx/Mzy
+4   4   Ra/Wa
+6   6   Ma
+4   8   Rax/Ray (same page)
+5   9   Rax/Ray (different page)
+5   9   Wax/Way
+7   11  Max/May
+6   8   Rix/Wix
+8   10  Mix/Miy
+5   7   Riy (same page)
+6   8   Riy (different page)
+6   8   Wiy
+8   10  Miy
+2   18  r+00 same page not taken
+3   19  r+00 same page taken
+3   19  r+7F same page taken
+4   20  r+01 different page taken
+4   20  r+7F different page taken
+3   19  r-03 same page taken
+3   19  r-80 same page taken
+4   20  r-03 different page taken
+4   20  r-80 different page taken
+7   7   BRKn
+3   3   PHAn/PHPn
+4   4   PLAn/PLPn
+3   3   JMPw
+5   5   JMPi
+6   6   JSRw
+6   6   RTSn
+6   6   RTIn
+
+#1 = command execution time without overhead
+#2 = displayed value including overhead for measurement
+R/W/M = Read/Write/Modify
+
+
+
+
+
+*******************************************
+**  U N D E R   C O N S T R U C T I O N  **
+*******************************************
+
+
+
+
+
+Programs IRQ and NMI - CPU interrupts within commands
+
+An interrupt is recognized only before the last cycle of the current command.
+
+When an IRQ occurs while SEI is executing, the IFlag on the stack will be set.
+
+
+
+
+Programs CIA1TB123 and CIA2TB123 - CIA timer B 1-3 cycles after writing CRB
+
+The cycles 1-3 after STA DD0F cannot be measured with LDA DD06 because it takes 3 cycles to decode the LDAa. Executing the STA DD0F at DD03 lets the CPU read DD06 within one cycle.
+
+#1 #2  DD06 sequence 1/2/3
+--------------------------
+00 01  keep   keep   count
+00 10  keep   load   keep
+00 11  keep   load   keep
+01 11  count  load   keep
+01 10  count  load   keep
+01 00  count  count  keep
+
+#1, #2 = values written to DD0F
+
+
+
+Programs CIA1TA to CIA2TB - CIA timers in sysclock mode
+
+
+
+
