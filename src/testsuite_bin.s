@@ -13,19 +13,26 @@ ancb
 */
 
 .globl test_adca
-test_adca:
-	.incbin "./Testsuite/adca"
-
 .globl test_adcax
-test_adcax:
-	.incbin "./Testsuite/adcax"
-
 .globl test_adcay
-test_adcay:
-	.incbin "./Testsuite/adcay"
-
 .globl test_adcb
-test_adcb:
-	.incbin "./Testsuite/adcb"
+.globl test_adcix
+.globl test_adciy
+.globl test_adcz
+.globl test_adczx
+.globl test_alrb
+.globl test_ancb
+
+
+test_adca: .incbin "./Testsuite/adca"
+test_adcax: .incbin "./Testsuite/adcax"
+test_adcay: .incbin "./Testsuite/adcay"
+test_adcb: .incbin "./Testsuite/adcb"
+test_adcix: .incbin "./Testsuite/adcix"
+test_adciy: .incbin "./Testsuite/adciy"
+test_adcz: .incbin "./Testsuite/adcz"
+test_adczx: .incbin "./Testsuite/adczx"
+test_alrb: .incbin "./Testsuite/alrb"
+test_ancb: .incbin "./Testsuite/ancb"
 
 
