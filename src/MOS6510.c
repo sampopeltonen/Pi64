@@ -172,8 +172,9 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 
 
 void mneILL(int am, int cycles) {
-	printf2("Illegal opcode %x. PC=%x", memReadByte(PC-1),PC-1);
-	exit(0);
+	printf1("Illop:%x",memReadByte(PC-1));
+	printf1("PC:%x",PC-1);
+	exit(1);
 }
 
 void mneADC(int am, int cycles) {
@@ -700,16 +701,12 @@ void mneROL(int am, int cycles) {
 }
 
 void mneROR(int am, int cycles) {
-
-	#if DEBUG_6510
-	printf("ROR ");
-	#endif
 	cyc = cycles;
 	word target;
 	byte tmpb;
 	int tmpbit = 0;
 	if(am==ACCUMULATOR) {
-		if((A & B8)==B8) tmpbit = 1;
+		if(A & B1) tmpbit = 1;
 		A = (A >> 1) & 0x7f;
 		A = A | ((P & PFLAG_CARRY) ? 0x80 : 0x00);
 		tmpbit ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
@@ -719,7 +716,7 @@ void mneROR(int am, int cycles) {
 		resolveAddressModeTarget(am, &target);
 		tmpb = memReadByte(target);
 		
-		if((tmpb & B1)==B1) tmpbit = 1;
+		if(tmpb & B1) tmpbit = 1;
 		tmpb = (tmpb >> 1) & 0x7f;
 		tmpb = tmpb | ((P & PFLAG_CARRY) ? 0x80 : 0x00);
 		tmpbit ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
@@ -729,6 +726,7 @@ void mneROR(int am, int cycles) {
 }
 
 void mneRTI(int am, int cycles) {
+	cyc = cycles;
 	P = stackPull();
 	PC = stackPull() + (stackPull() << 8);
 	//printf1("RTI pulled PC value %x from stack",PC);
@@ -828,9 +826,6 @@ void mneSEI(int am, int cycles) {
 }
 
 void mneSTA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("STA ");
-	#endif
 	word target;
 	cyc = cycles;
 	resolveAddressModeTarget(am, &target);
@@ -838,9 +833,6 @@ void mneSTA(int am, int cycles) {
 }
 
 void mneSTX(int am, int cycles) {
-	#if DEBUG_6510
-	printf("STX ");
-	#endif
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
@@ -848,9 +840,6 @@ void mneSTX(int am, int cycles) {
 }
 
 void mneSTY(int am, int cycles) {
-	#if DEBUG_6510
-	printf("STY ");
-	#endif
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
@@ -858,41 +847,30 @@ void mneSTY(int am, int cycles) {
 }
 
 void mneTAX(int am, int cycles) {
-	#if DEBUG_6510
-	printf("TAX ");
-	#endif
 	cyc = cycles;
 	X = A;
 	setZeroAndNegativePFlags(&X);
 }
 
 void mneTAY(int am, int cycles) {
-	#if DEBUG_6510
-	printf("TAY ");
-	#endif
 	cyc = cycles;
 	Y = A;
 	setZeroAndNegativePFlags(&Y);
 }
 
 void mneTSX(int am, int cycles) {
+	cyc = cycles;
 	X = S;
 	setZeroAndNegativePFlags(&X);
 }
 
 void mneTXA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("TXA ");
-	#endif
 	cyc = cycles;
 	A = X;
 	setZeroAndNegativePFlags(&A);
 }
 
 void mneTXS(int am, int cycles) {
-	#if DEBUG_6510
-	printf("TXS ");
-	#endif
 	cyc = cycles;
 	if(am==IMPLIED) {
 		S=X;
@@ -904,14 +882,23 @@ void mneTXS(int am, int cycles) {
 }
 
 void mneTYA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("TYA ");
-	#endif
 	cyc = cycles;
 	A = Y;
 	setZeroAndNegativePFlags(&A);
 }
 
+
+/* non-standard and undocumented op-codes */
+void mneASR(int am, int cycles) {
+	// ASR (aka ALR)     $4B       A <- [(A /\ M) >> 1]       (Immediate)      1/2
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	byte tmpVal = (A & memReadByte(target));
+	(tmpVal & B1) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+	A = (tmpVal >> 1);
+	setZeroAndNegativePFlags(&A);
+}
 
 
 
@@ -993,7 +980,7 @@ void initMnemonicArray() {
 	i=0x48; mneAM[i].pt2MnemonicHandler = &mnePHA; mneAM[i].cycles = 3; mneAM[i].am = IMPLIED;
 	i=0x49; mneAM[i].pt2MnemonicHandler = &mneEOR; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x4a; mneAM[i].pt2MnemonicHandler = &mneLSR; mneAM[i].cycles = 2; mneAM[i].am = ACCUMULATOR;
-	i=0x4b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x4b; mneAM[i].pt2MnemonicHandler = &mneASR; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;	// ASR aka ALR
 	i=0x4c; mneAM[i].pt2MnemonicHandler = &mneJMP; mneAM[i].cycles = 3; mneAM[i].am = ABSOLUTE;
 	i=0x4d; mneAM[i].pt2MnemonicHandler = &mneEOR; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x4e; mneAM[i].pt2MnemonicHandler = &mneLSR; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
