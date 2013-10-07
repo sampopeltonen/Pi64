@@ -119,6 +119,10 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 			oper1 = readMemoryPC();
 			*targetAddress = (oper1+X) & 0xff;
 			break;
+		case ZEROPAGE_Y:
+			oper1 = readMemoryPC();
+                        *targetAddress = (oper1+Y) & 0xff;
+			break;
 		case ABSOLUTE:
 			oper1 = readMemoryPC();
 			oper2 = readMemoryPC();
@@ -160,7 +164,8 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 			*targetAddress = tmpw;
 			break;
 		default:
-			printf1("Addressing %d mode not implemented.\n", am);
+			printf1("AM %d not implemented.", am);
+			printf1("PC=%x",PC);
 			exit(1);
 	}
 	return(pageCrossed);
@@ -900,7 +905,86 @@ void mneASR(int am, int cycles) {
 	setZeroAndNegativePFlags(&A);
 }
 
+void mneANC(int am, int cycles) {
+	//ANC      $0B       A <- A /\ M, C=~A7         (Immediate)      1/2
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	A = A & memReadByte(target);
+	// I guess there's a error in a doc, C doesn't seem to be ~A7
+	(A & B8) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+	setZeroAndNegativePFlags(&A);
+}
 
+void mneANE(int am, int cycles) {
+	// ANE       $8B       M <-[(A)\/$EE] /\ (X)/\(M) (Immediate)      2/2^4
+	// A = (A | #$EE) & X & #byte
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	A = (A|0xee) & X & memReadByte(target);	
+	setZeroAndNegativePFlags(&A);
+}
+
+void mneARR(int am, int cycles) {
+	// see long description of this PITA opcode in
+	// http://www.zimmers.net/anonftp/pub/cbm/documents/chipdata/64doc
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	byte targetVal = memReadByte(target);
+	byte maskC = (P & PFLAG_CARRY) ? 0b10000000 : 0;
+
+	if(P & PFLAG_DECIMAL) {
+		byte t = A & targetVal;
+		byte AH = t >> 4;
+		byte AL = t & 0xf;
+		A = (t >> 1) | maskC;
+		A ? clearPFlag(PFLAG_ZERO) : setPFlag(PFLAG_ZERO);
+		maskC ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
+		((t ^ A) & 0x40) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+		if (AL + (AL & 1) > 5)
+			A = (A & 0xf0) | ((A + 6) & 0xf);
+		if((AH + (AH & 1)) > 5) {
+			setPFlag(PFLAG_CARRY);
+			A = (A + 0x60) & 0xff;
+		}
+		else {
+			clearPFlag(PFLAG_CARRY);
+		}
+	}
+	else {
+		A = ((A & targetVal) >> 1) | maskC;
+		setZeroAndNegativePFlags(&A);
+		byte aV = A & B7;
+		aV ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+		byte bV = (A & B6) << 1;
+		(aV ^ bV) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+	}
+}
+
+
+void mneSLO(int am, int cycles) {
+	// aka ASO
+	// This opcode ASLs the contents of a memory location and then ORs the result with the accumulator.  
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	byte targetVal = memReadByte(target);
+	targetVal & B8 ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+	targetVal = (targetVal << 1);
+	memWriteByte(target, targetVal);
+	A = A | targetVal;
+	setZeroAndNegativePFlags(&A);
+}
+
+void mneAXS(int am, int cycles) {
+	// aka SAX
+	cyc = cycles;
+        word target;
+        resolveAddressModeTarget(am, &target);
+	memWriteByte(target, (A & X));
+}
 
 
 void initMnemonicArray() {
@@ -908,35 +992,35 @@ void initMnemonicArray() {
 	i=0x00; mneAM[i].pt2MnemonicHandler = &mneBRK; mneAM[i].cycles = 7; mneAM[i].am = IMPLIED;
 	i=0x01; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0x02; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x03; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x03; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_X;
 	i=0x04; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x05; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 2; mneAM[i].am = ZEROPAGE;
 	i=0x06; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
-	i=0x07; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x07; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
 	i=0x08; mneAM[i].pt2MnemonicHandler = &mnePHP; mneAM[i].cycles = 3; mneAM[i].am = IMPLIED;
 	i=0x09; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x0a; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 2; mneAM[i].am = ACCUMULATOR;
-	i=0x0b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x0b; mneAM[i].pt2MnemonicHandler = &mneANC; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x0c; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x0d; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x0e; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
-	i=0x0f; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x0f; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
 	i=0x10; mneAM[i].pt2MnemonicHandler = &mneBPL; mneAM[i].cycles = 2; mneAM[i].am = RELATIVE;
 	i=0x11; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 5; mneAM[i].am = INDIRECT_Y;
 	i=0x12; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x13; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x13; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_Y;
 	i=0x14; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x15; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE_X;
 	i=0x16; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
-	i=0x17; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x17; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
 	i=0x18; mneAM[i].pt2MnemonicHandler = &mneCLC; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0x19; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE_Y;
 	i=0x1a; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x1b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x1b; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 7; mneAM[i].am = ABSOLUTE_Y;
 	i=0x1c; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x1d; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE_X;
 	i=0x1e; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 7; mneAM[i].am = ABSOLUTE_X;
-	i=0x1f; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x1f; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 7; mneAM[i].am = ABSOLUTE_X;
 	i=0x20; mneAM[i].pt2MnemonicHandler = &mneJSR; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
 	i=0x21; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0x22; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
@@ -948,7 +1032,7 @@ void initMnemonicArray() {
 	i=0x28; mneAM[i].pt2MnemonicHandler = &mnePLP; mneAM[i].cycles = 4; mneAM[i].am = IMPLIED;
 	i=0x29; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x2a; mneAM[i].pt2MnemonicHandler = &mneROL; mneAM[i].cycles = 2; mneAM[i].am = ACCUMULATOR;
-	i=0x2b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x2b; mneAM[i].pt2MnemonicHandler = &mneANC; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x2c; mneAM[i].pt2MnemonicHandler = &mneBIT; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x2d; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x2e; mneAM[i].pt2MnemonicHandler = &mneROL; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
@@ -1012,7 +1096,7 @@ void initMnemonicArray() {
 	i=0x68; mneAM[i].pt2MnemonicHandler = &mnePLA; mneAM[i].cycles = 4; mneAM[i].am = IMPLIED;
 	i=0x69; mneAM[i].pt2MnemonicHandler = &mneADC; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x6a; mneAM[i].pt2MnemonicHandler = &mneROR; mneAM[i].cycles = 2; mneAM[i].am = ACCUMULATOR;
-	i=0x6b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x6b; mneAM[i].pt2MnemonicHandler = &mneARR; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x6c; mneAM[i].pt2MnemonicHandler = &mneJMP; mneAM[i].cycles = 5; mneAM[i].am = INDIRECT;
 	i=0x6d; mneAM[i].pt2MnemonicHandler = &mneADC; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x6e; mneAM[i].pt2MnemonicHandler = &mneROR; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
@@ -1036,19 +1120,19 @@ void initMnemonicArray() {
 	i=0x80; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x81; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0x82; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x83; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x83; mneAM[i].pt2MnemonicHandler = &mneAXS; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0x84; mneAM[i].pt2MnemonicHandler = &mneSTY; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0x85; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0x86; mneAM[i].pt2MnemonicHandler = &mneSTX; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
-	i=0x87; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x87; mneAM[i].pt2MnemonicHandler = &mneAXS; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0x88; mneAM[i].pt2MnemonicHandler = &mneDEY; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0x89; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x8a; mneAM[i].pt2MnemonicHandler = &mneTXA; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
-	i=0x8b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x8b; mneAM[i].pt2MnemonicHandler = &mneANE; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0x8c; mneAM[i].pt2MnemonicHandler = &mneSTY; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x8d; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x8e; mneAM[i].pt2MnemonicHandler = &mneSTX; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
-	i=0x8f; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x8f; mneAM[i].pt2MnemonicHandler = &mneAXS; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0x90; mneAM[i].pt2MnemonicHandler = &mneBCC; mneAM[i].cycles = 2; mneAM[i].am = RELATIVE;
 	i=0x91; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_Y;
 	i=0x92; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
@@ -1056,7 +1140,7 @@ void initMnemonicArray() {
 	i=0x94; mneAM[i].pt2MnemonicHandler = &mneSTY; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0x95; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0x96; mneAM[i].pt2MnemonicHandler = &mneSTX; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_Y;
-	i=0x97; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x97; mneAM[i].pt2MnemonicHandler = &mneAXS; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_Y;
 	i=0x98; mneAM[i].pt2MnemonicHandler = &mneTYA; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0x99; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_Y;
 	i=0x9a; mneAM[i].pt2MnemonicHandler = &mneTXS; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
