@@ -15,7 +15,34 @@ adciy	OK
 adcz	OK
 adczx	OK
 alrb	OK
-ancb
+ancb	OK
+anda	OK
+andax	OK
+anday	OK
+andb	OK
+andix	OK
+andiy	OK
+andz	OK
+andzx	OK
+aneb	OK
+arrb	OK
+asla	OK
+aslax	OK
+asln	OK
+aslz	OK
+aslzx	OK
+asoa	OK
+asoax	OK
+asoay	OK
+asoix	OK
+asoiy	OK
+asoz	OK
+asozx	OK
+axsa	OK
+axsix	OK
+axsz	OK
+axszy	OK
+bccr
 */
 
 extern byte test_adca[];
@@ -28,12 +55,39 @@ extern byte test_adcz[];
 extern byte test_adczx[];
 extern byte test_alrb[];
 extern byte test_ancb[];
+extern byte test_anda[];
+extern byte test_andax[];
+extern byte test_anday[];
+extern byte test_andb[];
+extern byte test_andix[];
+extern byte test_andiy[];
+extern byte test_andz[];
+extern byte test_andzx[];
+extern byte test_aneb[];
+extern byte test_arrb[];
+extern byte test_asla[];
+extern byte test_aslax[];
+extern byte test_asln[];
+extern byte test_aslz[];
+extern byte test_aslzx[];
+extern byte test_asoa[];
+extern byte test_asoax[];
+extern byte test_asoay[];
+extern byte test_asoix[];
+extern byte test_asoiy[];
+extern byte test_asoz[];
+extern byte test_asozx[];
+extern byte test_axsa[];
+extern byte test_axsix[];
+extern byte test_axsz[];
+extern byte test_axszy[];
+extern byte test_bccr[];
 
 int initialized = 0;
-int testNumber=8;
+int testNumber=35; //axszy
 
-#define TESTCOUNT 10
-void* tests[TESTCOUNT];
+#define TESTCOUNT 36
+void* tests[TESTCOUNT+5];
 
 
 void loadTest(int number) {
@@ -53,16 +107,45 @@ void loadTest(int number) {
 }
 
 void init() {
-	tests[0] = test_adca;
-	tests[1] = test_adcax;
-	tests[2] = test_adcay;
-	tests[3] = test_adcb;
-	tests[4] = test_adcix;
-	tests[5] = test_adciy;
-	tests[6] = test_adcz;
-	tests[7] = test_adczx;
-	tests[8] = test_alrb;
-	tests[9] = test_ancb;
+	int i = 0;
+	tests[i++] = test_adca;
+	tests[i++] = test_adcax;
+	tests[i++] = test_adcay;
+	tests[i++] = test_adcb;
+	tests[i++] = test_adcix;
+	tests[i++] = test_adciy;
+	tests[i++] = test_adcz;
+	tests[i++] = test_adczx;
+	tests[i++] = test_alrb;
+	tests[i++] = test_ancb;
+	tests[i++] = test_anda;
+	tests[i++] = test_andax;
+	tests[i++] = test_anday;
+	tests[i++] = test_andb;
+	tests[i++] = test_andix;
+	tests[i++] = test_andiy;
+	tests[i++] = test_andz;
+	tests[i++] = test_andzx;
+	tests[i++] = test_aneb;
+	tests[i++] = test_arrb;
+	tests[i++] = test_asla;
+	tests[i++] = test_aslax;
+	tests[i++] = test_asln;
+	tests[i++] = test_aslz;
+	tests[i++] = test_aslzx;
+	tests[i++] = test_asoa;
+	tests[i++] = test_asoax;
+	tests[i++] = test_asoay;
+	tests[i++] = test_asoix;
+	tests[i++] = test_asoiy;
+	tests[i++] = test_asoz;
+	tests[i++] = test_asozx;
+	tests[i++] = test_axsa;
+	tests[i++] = test_axsix;
+	tests[i++] = test_axsz;
+	tests[i++] = test_axszy;
+	tests[i++] = test_bccr;
+	
 	initialized=1;
 }
 
