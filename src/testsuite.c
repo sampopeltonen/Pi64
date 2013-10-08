@@ -42,7 +42,47 @@ axsa	OK
 axsix	OK
 axsz	OK
 axszy	OK
-bccr
+bccr	OK
+bcsr	OK
+beqr	OK
+bita	OK
+bitz	OK
+bmir	OK
+bner	OK
+bplr	OK
+branchwrap	OK
+brkn	OK
+bvcr	OK
+bvsr	OK
+clcn	OK
+cldn	OK
+clin	OK
+clvn	OK
+cmpa	OK
+cmpax	OK
+cmpay	OK
+cmpb	OK
+cmpix	OK
+cmpiy	OK
+cmpz	OK
+cmpzx	OK
+cpuport		fail 60
+cputiming
+cpxa	OK
+cpxb	OK
+cpxz	OK
+cpya	OK
+cpyb	OK
+cpyz	OK
+dcma	OK
+dcmax	OK
+dcmay	OK
+dcmix	OK
+dcmiy	OK
+dcmz	OK
+dcmzx	OK
+deca
+
 */
 
 extern byte test_adca[];
@@ -82,12 +122,51 @@ extern byte test_axsix[];
 extern byte test_axsz[];
 extern byte test_axszy[];
 extern byte test_bccr[];
+extern byte test_bcsr[];
+extern byte test_beqr[];
+extern byte test_bita[];
+extern byte test_bitz[];
+extern byte test_bmir[];
+extern byte test_bner[];
+extern byte test_bplr[];
+extern byte test_branchwrap[];
+extern byte test_brkn[];
+extern byte test_bvcr[];
+extern byte test_bvsr[];
+extern byte test_clcn[];
+extern byte test_cldn[];
+extern byte test_clin[];
+extern byte test_clvn[];
+extern byte test_cmpa[];
+extern byte test_cmpax[];
+extern byte test_cmpay[];
+extern byte test_cmpb[];
+extern byte test_cmpix[];
+extern byte test_cmpiy[];
+extern byte test_cmpz[];
+extern byte test_cmpzx[];
+extern byte test_cpuport[];
+extern byte test_cputiming[];
+extern byte test_cpxa[];
+extern byte test_cpxb[];
+extern byte test_cpxz[];
+extern byte test_cpya[];
+extern byte test_cpyb[];
+extern byte test_cpyz[];
+extern byte test_dcma[];
+extern byte test_dcmax[];
+extern byte test_dcmay[];
+extern byte test_dcmix[];
+extern byte test_dcmiy[];
+extern byte test_dcmz[];
+extern byte test_dcmzx[];
+extern byte test_deca[];
 
 int initialized = 0;
-int testNumber=35; //axszy
+int testNumber=68;
 
-#define TESTCOUNT 36
-void* tests[TESTCOUNT+5];
+#define TESTCOUNT 76
+void* tests[TESTCOUNT];
 
 
 void loadTest(int number) {
@@ -102,6 +181,7 @@ void loadTest(int number) {
 	memWriteByte(memaddr++, 0x8);
 	for(progaddr=4; progaddr<programlength; progaddr++) {
 		memWriteByte(memaddr, test1[progaddr]);
+		//printf2("%x:%x",memaddr,test1[progaddr]);
 		memaddr++;
 	}
 }
@@ -145,6 +225,45 @@ void init() {
 	tests[i++] = test_axsz;
 	tests[i++] = test_axszy;
 	tests[i++] = test_bccr;
+	tests[i++] = test_bcsr;
+	tests[i++] = test_beqr;
+	tests[i++] = test_bita;
+	tests[i++] = test_bitz;
+	tests[i++] = test_bmir;
+	tests[i++] = test_bner;
+	tests[i++] = test_bplr;
+	tests[i++] = test_branchwrap;
+	tests[i++] = test_brkn;
+	tests[i++] = test_bvcr;
+	tests[i++] = test_bvsr;
+	tests[i++] = test_clcn;
+	tests[i++] = test_cldn;
+	tests[i++] = test_clin;
+	tests[i++] = test_clvn;
+	tests[i++] = test_cmpa;
+	tests[i++] = test_cmpax;
+	tests[i++] = test_cmpay;
+	tests[i++] = test_cmpb;
+	tests[i++] = test_cmpix;
+	tests[i++] = test_cmpiy;
+	tests[i++] = test_cmpz;
+	tests[i++] = test_cmpzx;
+	tests[i++] = test_cpuport;
+	tests[i++] = test_cputiming;
+	tests[i++] = test_cpxa;
+	tests[i++] = test_cpxb;
+	tests[i++] = test_cpxz;
+	tests[i++] = test_cpya;
+	tests[i++] = test_cpyb;
+	tests[i++] = test_cpyz;
+	tests[i++] = test_dcma;
+	tests[i++] = test_dcmax;
+	tests[i++] = test_dcmay;
+	tests[i++] = test_dcmix;
+	tests[i++] = test_dcmiy;
+	tests[i++] = test_dcmz;
+	tests[i++] = test_dcmzx;
+	tests[i++] = test_deca;
 	
 	initialized=1;
 }

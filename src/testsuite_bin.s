@@ -37,6 +37,46 @@ axsix
 axsz
 axszy
 bccr
+bcsr
+beqr
+bita
+bitz
+bmir
+bner
+bplr
+branchwrap
+brkn
+bvcr
+bvsr
+clcn
+cldn
+clin
+clvn
+cmpa
+cmpax
+cmpay
+cmpb
+cmpix
+cmpiy
+cmpz
+cmpzx
+cpuport
+cputiming
+cpxa
+cpxb
+cpxz
+cpya
+cpyb
+cpyz
+dcma
+dcmax
+dcmay
+dcmix
+dcmiy
+dcmz
+dcmzx
+deca
+
 */
 
 .globl test_adca
@@ -76,6 +116,45 @@ bccr
 .globl test_axsz
 .globl test_axszy
 .globl test_bccr
+.globl test_bcsr
+.globl test_beqr
+.globl test_bita
+.globl test_bitz
+.globl test_bmir
+.globl test_bner
+.globl test_bplr
+.globl test_branchwrap
+.globl test_brkn
+.globl test_bvcr
+.globl test_bvsr
+.globl test_clcn
+.globl test_cldn
+.globl test_clin
+.globl test_clvn
+.globl test_cmpa
+.globl test_cmpax
+.globl test_cmpay
+.globl test_cmpb
+.globl test_cmpix
+.globl test_cmpiy
+.globl test_cmpz
+.globl test_cmpzx
+.globl test_cpuport
+.globl test_cputiming
+.globl test_cpxa
+.globl test_cpxb
+.globl test_cpxz
+.globl test_cpya
+.globl test_cpyb
+.globl test_cpyz
+.globl test_dcma
+.globl test_dcmax
+.globl test_dcmay
+.globl test_dcmix
+.globl test_dcmiy
+.globl test_dcmz
+.globl test_dcmzx
+.globl test_deca
 
 test_adca:  .incbin "./Testsuite/adca"
 test_adcax: .incbin "./Testsuite/adcax"
@@ -114,3 +193,43 @@ test_axsix: .incbin "./Testsuite/axsix"
 test_axsz:  .incbin "./Testsuite/axsz"
 test_axszy: .incbin "./Testsuite/axszy"
 test_bccr:  .incbin "./Testsuite/bccr"
+test_bcsr: .incbin "./Testsuite/bcsr"
+test_beqr: .incbin "./Testsuite/beqr"
+test_bita: .incbin "./Testsuite/bita"
+test_bitz: .incbin "./Testsuite/bitz"
+test_bmir: .incbin "./Testsuite/bmir"
+test_bner: .incbin "./Testsuite/bner"
+test_bplr: .incbin "./Testsuite/bplr"
+test_branchwrap: .incbin "./Testsuite/branchwrap"
+test_brkn: .incbin "./Testsuite/brkn"
+test_bvcr: .incbin "./Testsuite/bvcr"
+test_bvsr: .incbin "./Testsuite/bvsr"
+test_clcn: .incbin "./Testsuite/clcn"
+test_cldn: .incbin "./Testsuite/cldn"
+test_clin: .incbin "./Testsuite/clin"
+test_clvn: .incbin "./Testsuite/clvn"
+test_cmpa: .incbin "./Testsuite/cmpa"
+test_cmpax: .incbin "./Testsuite/cmpax"
+test_cmpay: .incbin "./Testsuite/cmpay"
+test_cmpb: .incbin "./Testsuite/cmpb"
+test_cmpix: .incbin "./Testsuite/cmpix"
+test_cmpiy: .incbin "./Testsuite/cmpiy"
+test_cmpz: .incbin "./Testsuite/cmpz"
+test_cmpzx: .incbin "./Testsuite/cmpzx"
+test_cpuport: .incbin "./Testsuite/cpuport"
+test_cputiming: .incbin "./Testsuite/cputiming"
+test_cpxa: .incbin "./Testsuite/cpxa"
+test_cpxb: .incbin "./Testsuite/cpxb"
+test_cpxz: .incbin "./Testsuite/cpxz"
+test_cpya: .incbin "./Testsuite/cpya"
+test_cpyb: .incbin "./Testsuite/cpyb"
+test_cpyz: .incbin "./Testsuite/cpyz"
+test_dcma: .incbin "./Testsuite/dcma"
+test_dcmax: .incbin "./Testsuite/dcmax"
+test_dcmay: .incbin "./Testsuite/dcmay"
+test_dcmix: .incbin "./Testsuite/dcmix"
+test_dcmiy: .incbin "./Testsuite/dcmiy"
+test_dcmz: .incbin "./Testsuite/dcmz"
+test_dcmzx: .incbin "./Testsuite/dcmzx"
+test_deca: .incbin "./Testsuite/deca"
+
