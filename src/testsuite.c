@@ -81,8 +81,75 @@ dcmix	OK
 dcmiy	OK
 dcmz	OK
 dcmzx	OK
-deca
-
+deca	OK
+decax	OK
+decz	OK
+deczx	OK
+dexn	OK
+deyn	OK
+eora	OK
+eorax	OK
+eoray	OK
+eorb	OK
+eorix	OK
+eoriy	OK
+eorz	OK
+eorzx	OK
+inca	OK
+incax	OK
+incz	OK
+inczx	OK
+insa	fail ins uses SBC logic, test SBC first 93
+insax
+insay
+insix
+insiy
+insz
+inszx
+inxn	OK
+inyn	OK
+jmpi	OK
+jmpw	OK
+jsrw	OK
+lasay	OK
+laxa	OK
+laxay	OK
+laxix	OK
+laxiy	OK
+laxz	OK
+laxzy	OK
+ldaa	OK
+ldaax	OK
+ldaay	OK
+ldab	OK
+ldaix	OK
+ldaiy	OK
+ldaz	OK
+ldazx	OK
+ldxa	OK
+ldxay	OK
+ldxb	OK
+ldxz	OK
+ldxzy	OK
+ldya	OK
+ldyax	OK
+ldyb	OK
+ldyz	OK
+ldyzx	OK
+lsea	OK
+lseax	OK
+lseay	OK
+lseix	OK
+lseiy	OK
+lsez	OK
+lsezx	OK
+lsra	OK
+lsrax	OK
+lsrn	OK
+lsrz	OK
+lsrzx	OK
+lxab	OK
+mmu
 */
 
 extern byte test_adca[];
@@ -161,11 +228,79 @@ extern byte test_dcmiy[];
 extern byte test_dcmz[];
 extern byte test_dcmzx[];
 extern byte test_deca[];
+extern byte test_decax[];
+extern byte test_decz[];
+extern byte test_deczx[];
+extern byte test_dexn[];
+extern byte test_deyn[];
+extern byte test_eora[];
+extern byte test_eorax[];
+extern byte test_eoray[];
+extern byte test_eorb[];
+extern byte test_eorix[];
+extern byte test_eoriy[];
+extern byte test_eorz[];
+extern byte test_eorzx[];
+extern byte test_inca[];
+extern byte test_incax[];
+extern byte test_incz[];
+extern byte test_inczx[];
+extern byte test_insa[];
+extern byte test_insax[];
+extern byte test_insay[];
+extern byte test_insix[];
+extern byte test_insiy[];
+extern byte test_insz[];
+extern byte test_inszx[];
+extern byte test_inxn[];
+extern byte test_inyn[];
+extern byte test_jmpi[];
+extern byte test_jmpw[];
+extern byte test_jsrw[];
+extern byte test_lasay[];
+extern byte test_laxa[];
+extern byte test_laxay[];
+extern byte test_laxix[];
+extern byte test_laxiy[];
+extern byte test_laxz[];
+extern byte test_laxzy[];
+extern byte test_ldaa[];
+extern byte test_ldaax[];
+extern byte test_ldaay[];
+extern byte test_ldab[];
+extern byte test_ldaix[];
+extern byte test_ldaiy[];
+extern byte test_ldaz[];
+extern byte test_ldazx[];
+extern byte test_ldxa[];
+extern byte test_ldxay[];
+extern byte test_ldxb[];
+extern byte test_ldxz[];
+extern byte test_ldxzy[];
+extern byte test_ldya[];
+extern byte test_ldyax[];
+extern byte test_ldyb[];
+extern byte test_ldyz[];
+extern byte test_ldyzx[];
+extern byte test_lsea[];
+extern byte test_lseax[];
+extern byte test_lseay[];
+extern byte test_lseix[];
+extern byte test_lseiy[];
+extern byte test_lsez[];
+extern byte test_lsezx[];
+extern byte test_lsra[];
+extern byte test_lsrax[];
+extern byte test_lsrn[];
+extern byte test_lsrz[];
+extern byte test_lsrzx[];
+extern byte test_lxab[];
+extern byte test_mmu[];
 
 int initialized = 0;
 int testNumber=68;
 
-#define TESTCOUNT 76
+#define TESTCOUNT 144
 void* tests[TESTCOUNT];
 
 
@@ -264,6 +399,74 @@ void init() {
 	tests[i++] = test_dcmz;
 	tests[i++] = test_dcmzx;
 	tests[i++] = test_deca;
+	tests[i++] = test_decax;
+	tests[i++] = test_decz;
+	tests[i++] = test_deczx;
+	tests[i++] = test_dexn;
+	tests[i++] = test_deyn;
+	tests[i++] = test_eora;
+	tests[i++] = test_eorax;
+	tests[i++] = test_eoray;
+	tests[i++] = test_eorb;
+	tests[i++] = test_eorix;
+	tests[i++] = test_eoriy;
+	tests[i++] = test_eorz;
+	tests[i++] = test_eorzx;
+	tests[i++] = test_inca;
+	tests[i++] = test_incax;
+	tests[i++] = test_incz;
+	tests[i++] = test_inczx;
+	tests[i++] = test_insa;
+	tests[i++] = test_insax;
+	tests[i++] = test_insay;
+	tests[i++] = test_insix;
+	tests[i++] = test_insiy;
+	tests[i++] = test_insz;
+	tests[i++] = test_inszx;
+	tests[i++] = test_inxn;
+	tests[i++] = test_inyn;
+	tests[i++] = test_jmpi;
+	tests[i++] = test_jmpw;
+	tests[i++] = test_jsrw;
+	tests[i++] = test_lasay;
+	tests[i++] = test_laxa;
+	tests[i++] = test_laxay;
+	tests[i++] = test_laxix;
+	tests[i++] = test_laxiy;
+	tests[i++] = test_laxz;
+	tests[i++] = test_laxzy;
+	tests[i++] = test_ldaa;
+	tests[i++] = test_ldaax;
+	tests[i++] = test_ldaay;
+	tests[i++] = test_ldab;
+	tests[i++] = test_ldaix;
+	tests[i++] = test_ldaiy;
+	tests[i++] = test_ldaz;
+	tests[i++] = test_ldazx;
+	tests[i++] = test_ldxa;
+	tests[i++] = test_ldxay;
+	tests[i++] = test_ldxb;
+	tests[i++] = test_ldxz;
+	tests[i++] = test_ldxzy;
+	tests[i++] = test_ldya;
+	tests[i++] = test_ldyax;
+	tests[i++] = test_ldyb;
+	tests[i++] = test_ldyz;
+	tests[i++] = test_ldyzx;
+	tests[i++] = test_lsea;
+	tests[i++] = test_lseax;
+	tests[i++] = test_lseay;
+	tests[i++] = test_lseix;
+	tests[i++] = test_lseiy;
+	tests[i++] = test_lsez;
+	tests[i++] = test_lsezx;
+	tests[i++] = test_lsra;
+	tests[i++] = test_lsrax;
+	tests[i++] = test_lsrn;
+	tests[i++] = test_lsrz;
+	tests[i++] = test_lsrzx;
+	tests[i++] = test_lxab;
+	tests[i++] = test_mmu;
 	
 	initialized=1;
 }

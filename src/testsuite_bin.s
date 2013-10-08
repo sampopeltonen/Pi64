@@ -76,7 +76,74 @@ dcmiy
 dcmz
 dcmzx
 deca
-
+decax
+decz
+deczx
+dexn
+deyn
+eora
+eorax
+eoray
+eorb
+eorix
+eoriy
+eorz
+eorzx
+inca
+incax
+incz
+inczx
+insa
+insax
+insay
+insix
+insiy
+insz
+inszx
+inxn
+inyn
+jmpi
+jmpw
+jsrw
+lasay
+laxa
+laxay
+laxix
+laxiy
+laxz
+laxzy
+ldaa
+ldaax
+ldaay
+ldab
+ldaix
+ldaiy
+ldaz
+ldazx
+ldxa
+ldxay
+ldxb
+ldxz
+ldxzy
+ldya
+ldyax
+ldyb
+ldyz
+ldyzx
+lsea
+lseax
+lseay
+lseix
+lseiy
+lsez
+lsezx
+lsra
+lsrax
+lsrn
+lsrz
+lsrzx
+lxab
+mmu
 */
 
 .globl test_adca
@@ -155,6 +222,74 @@ deca
 .globl test_dcmz
 .globl test_dcmzx
 .globl test_deca
+.globl test_decax
+.globl test_decz
+.globl test_deczx
+.globl test_dexn
+.globl test_deyn
+.globl test_eora
+.globl test_eorax
+.globl test_eoray
+.globl test_eorb
+.globl test_eorix
+.globl test_eoriy
+.globl test_eorz
+.globl test_eorzx
+.globl test_inca
+.globl test_incax
+.globl test_incz
+.globl test_inczx
+.globl test_insa
+.globl test_insax
+.globl test_insay
+.globl test_insix
+.globl test_insiy
+.globl test_insz
+.globl test_inszx
+.globl test_inxn
+.globl test_inyn
+.globl test_jmpi
+.globl test_jmpw
+.globl test_jsrw
+.globl test_lasay
+.globl test_laxa
+.globl test_laxay
+.globl test_laxix
+.globl test_laxiy
+.globl test_laxz
+.globl test_laxzy
+.globl test_ldaa
+.globl test_ldaax
+.globl test_ldaay
+.globl test_ldab
+.globl test_ldaix
+.globl test_ldaiy
+.globl test_ldaz
+.globl test_ldazx
+.globl test_ldxa
+.globl test_ldxay
+.globl test_ldxb
+.globl test_ldxz
+.globl test_ldxzy
+.globl test_ldya
+.globl test_ldyax
+.globl test_ldyb
+.globl test_ldyz
+.globl test_ldyzx
+.globl test_lsea
+.globl test_lseax
+.globl test_lseay
+.globl test_lseix
+.globl test_lseiy
+.globl test_lsez
+.globl test_lsezx
+.globl test_lsra
+.globl test_lsrax
+.globl test_lsrn
+.globl test_lsrz
+.globl test_lsrzx
+.globl test_lxab
+.globl test_mmu
 
 test_adca:  .incbin "./Testsuite/adca"
 test_adcax: .incbin "./Testsuite/adcax"
@@ -232,4 +367,72 @@ test_dcmiy: .incbin "./Testsuite/dcmiy"
 test_dcmz: .incbin "./Testsuite/dcmz"
 test_dcmzx: .incbin "./Testsuite/dcmzx"
 test_deca: .incbin "./Testsuite/deca"
+test_decax: .incbin "./Testsuite/decax"
+test_decz: .incbin "./Testsuite/decz"
+test_deczx: .incbin "./Testsuite/deczx"
+test_dexn: .incbin "./Testsuite/dexn"
+test_deyn: .incbin "./Testsuite/deyn"
+test_eora: .incbin "./Testsuite/eora"
+test_eorax: .incbin "./Testsuite/eorax"
+test_eoray: .incbin "./Testsuite/eoray"
+test_eorb: .incbin "./Testsuite/eorb"
+test_eorix: .incbin "./Testsuite/eorix"
+test_eoriy: .incbin "./Testsuite/eoriy"
+test_eorz: .incbin "./Testsuite/eorz"
+test_eorzx: .incbin "./Testsuite/eorzx"
+test_inca: .incbin "./Testsuite/inca"
+test_incax: .incbin "./Testsuite/incax"
+test_incz: .incbin "./Testsuite/incz"
+test_inczx: .incbin "./Testsuite/inczx"
+test_insa: .incbin "./Testsuite/insa"
+test_insax: .incbin "./Testsuite/insax"
+test_insay: .incbin "./Testsuite/insay"
+test_insix: .incbin "./Testsuite/insix"
+test_insiy: .incbin "./Testsuite/insiy"
+test_insz: .incbin "./Testsuite/insz"
+test_inszx: .incbin "./Testsuite/inszx"
+test_inxn: .incbin "./Testsuite/inxn"
+test_inyn: .incbin "./Testsuite/inyn"
+test_jmpi: .incbin "./Testsuite/jmpi"
+test_jmpw: .incbin "./Testsuite/jmpw"
+test_jsrw: .incbin "./Testsuite/jsrw"
+test_lasay: .incbin "./Testsuite/lasay"
+test_laxa: .incbin "./Testsuite/laxa"
+test_laxay: .incbin "./Testsuite/laxay"
+test_laxix: .incbin "./Testsuite/laxix"
+test_laxiy: .incbin "./Testsuite/laxiy"
+test_laxz: .incbin "./Testsuite/laxz"
+test_laxzy: .incbin "./Testsuite/laxzy"
+test_ldaa: .incbin "./Testsuite/ldaa"
+test_ldaax: .incbin "./Testsuite/ldaax"
+test_ldaay: .incbin "./Testsuite/ldaay"
+test_ldab: .incbin "./Testsuite/ldab"
+test_ldaix: .incbin "./Testsuite/ldaix"
+test_ldaiy: .incbin "./Testsuite/ldaiy"
+test_ldaz: .incbin "./Testsuite/ldaz"
+test_ldazx: .incbin "./Testsuite/ldazx"
+test_ldxa: .incbin "./Testsuite/ldxa"
+test_ldxay: .incbin "./Testsuite/ldxay"
+test_ldxb: .incbin "./Testsuite/ldxb"
+test_ldxz: .incbin "./Testsuite/ldxz"
+test_ldxzy: .incbin "./Testsuite/ldxzy"
+test_ldya: .incbin "./Testsuite/ldya"
+test_ldyax: .incbin "./Testsuite/ldyax"
+test_ldyb: .incbin "./Testsuite/ldyb"
+test_ldyz: .incbin "./Testsuite/ldyz"
+test_ldyzx: .incbin "./Testsuite/ldyzx"
+test_lsea: .incbin "./Testsuite/lsea"
+test_lseax: .incbin "./Testsuite/lseax"
+test_lseay: .incbin "./Testsuite/lseay"
+test_lseix: .incbin "./Testsuite/lseix"
+test_lseiy: .incbin "./Testsuite/lseiy"
+test_lsez: .incbin "./Testsuite/lsez"
+test_lsezx: .incbin "./Testsuite/lsezx"
+test_lsra: .incbin "./Testsuite/lsra"
+test_lsrax: .incbin "./Testsuite/lsrax"
+test_lsrn: .incbin "./Testsuite/lsrn"
+test_lsrz: .incbin "./Testsuite/lsrz"
+test_lsrzx: .incbin "./Testsuite/lsrzx"
+test_lxab: .incbin "./Testsuite/lxab"
+test_mmu: .incbin "./Testsuite/mmu"
 
