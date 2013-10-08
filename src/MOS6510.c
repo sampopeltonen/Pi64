@@ -248,22 +248,13 @@ void mneASL(int am, int cycles) {
 }
 
 void mneBCC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BCC ");
-	#endif
 	cyc = cycles;
 	sbyte offset = readMemoryPC();
 	if((PFLAG_CARRY & P)==0) {
-		#if DEBUG_6510
-		printf1("jumping with decimal offset %d, ",offset);
-		#endif
 		cyc++;
 		word newLoc = PC + offset;
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
-		#if DEBUG_6510
-		printf1("PC new loc=%X",PC);
-		#endif
 	}
 }
 
@@ -385,10 +376,13 @@ void mneBPL(int am, int cycles) {
 }
 
 void mneBRK(int am, int cycles) {
-	// TODO: check when writing P to stack should set B flag?
-	printf1("BRK %x not implemented.\n",am); 
-	printf1("PC=%x",PC);
-	exit(1);
+	cyc = cycles;
+	PC+=1;
+	stackPush(PC >> 8);
+	stackPush(PC);
+	stackPush(P|PFLAG_BREAK);
+	P |= PFLAG_IRQ;
+	PC = memReadWord(0xfffe);
 }
 
 void mneBVC(int am, int cycles) {
@@ -432,7 +426,8 @@ void mneCLI(int am, int cycles) {
 }
 
 void mneCLV(int am, int cycles) {
-  printf("CLV not implemented.\n"); exit(1);
+	cyc = cycles;
+	clearPFlag(PFLAG_OVERFLOW);
 }
 
 void mneCMP(int am, int cycles) {
@@ -645,9 +640,6 @@ void mneNOP(int am, int cycles) {
 }
 
 void mneORA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("ORA ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	A = A | memReadByte(target);
@@ -655,9 +647,6 @@ void mneORA(int am, int cycles) {
 }
 
 void mnePHA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("PHA ");
-	#endif
 	cyc = cycles;
 	stackPush(A);
 }
@@ -986,6 +975,21 @@ void mneAXS(int am, int cycles) {
 	memWriteByte(target, (A & X));
 }
 
+void mneDCP(int am, int cycles) {
+	// aka DCM
+	cyc = cycles;
+	word target;
+        resolveAddressModeTarget(am, &target);
+        byte targetVal = memReadByte(target);
+        targetVal & B8 ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+        targetVal -= 1;
+        memWriteByte(target, targetVal);
+       	targetVal = A - targetVal;
+        setZeroAndNegativePFlags(&targetVal);
+        if(A>=targetVal) setPFlag(PFLAG_CARRY);
+        else clearPFlag(PFLAG_CARRY); 
+
+}
 
 void initMnemonicArray() {
 	byte i;
@@ -1184,11 +1188,11 @@ void initMnemonicArray() {
 	i=0xc0; mneAM[i].pt2MnemonicHandler = &mneCPY; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0xc1; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0xc2; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0xc3; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xc3; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_X;
 	i=0xc4; mneAM[i].pt2MnemonicHandler = &mneCPY; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0xc5; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0xc6; mneAM[i].pt2MnemonicHandler = &mneDEC; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
-	i=0xc7; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xc7; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
 	i=0xc8; mneAM[i].pt2MnemonicHandler = &mneINY; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0xc9; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0xca; mneAM[i].pt2MnemonicHandler = &mneDEX; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
@@ -1196,23 +1200,23 @@ void initMnemonicArray() {
 	i=0xcc; mneAM[i].pt2MnemonicHandler = &mneCPY; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0xcd; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0xce; mneAM[i].pt2MnemonicHandler = &mneDEC; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
-	i=0xcf; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xcf; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
 	i=0xd0; mneAM[i].pt2MnemonicHandler = &mneBNE; mneAM[i].cycles = 2; mneAM[i].am = RELATIVE;
 	i=0xd1; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 5; mneAM[i].am = INDIRECT_Y;
 	i=0xd2; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0xd3; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xd3; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_Y;
 	i=0xd4; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0xd5; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0xd6; mneAM[i].pt2MnemonicHandler = &mneDEC; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
-	i=0xd7; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xd7; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
 	i=0xd8; mneAM[i].pt2MnemonicHandler = &mneCLD; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0xd9; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE_Y;
 	i=0xda; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0xdb; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xdb; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 7; mneAM[i].am = ABSOLUTE_Y;
 	i=0xdc; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0xdd; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE_X;
 	i=0xde; mneAM[i].pt2MnemonicHandler = &mneDEC; mneAM[i].cycles = 7; mneAM[i].am = ABSOLUTE_X;
-	i=0xdf; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xdf; mneAM[i].pt2MnemonicHandler = &mneDCP; mneAM[i].cycles = 7; mneAM[i].am = ABSOLUTE_X;
 	i=0xe0; mneAM[i].pt2MnemonicHandler = &mneCPX; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0xe1; mneAM[i].pt2MnemonicHandler = &mneSBC; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0xe2; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
@@ -1293,6 +1297,7 @@ void mos6510_cycle() {
 				//printf1("IRQ pushed PC %x to stack",PC);
 				stackPush(P&~PFLAG_BREAK);
 				PC = memReadWord(0xfffe);
+				//TODO: IRQ and BRK both set the I flag, whereas the NMI does not affect its state.
 			}
 			irqLineUp=0;
 		}
