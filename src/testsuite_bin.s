@@ -144,6 +144,105 @@ lsrz
 lsrzx
 lxab
 mmu
+mmufetch
+nopa
+nopax
+nopb
+nopn
+nopz
+nopzx
+oraa
+oraax
+oraay
+orab
+oraix
+oraiy
+oraz
+orazx
+phan
+phpn
+plan
+plpn
+rlaa
+rlaax
+rlaay
+rlaix
+rlaiy
+rlaz
+rlazx
+rola
+rolax
+roln
+rolz
+rolzx
+rora
+rorax
+rorn
+rorz
+rorzx
+rraa
+rraax
+rraay
+rraix
+rraiy
+rraz
+rrazx
+rtin
+rtsn
+sbca
+sbcax
+sbcay
+sbcb
+sbcb(eb)
+sbcix
+sbciy
+sbcz
+sbczx
+sbxb
+secn
+sedn
+sein
+shaay
+shaiy
+shsay
+shxay
+shyax
+staa
+staax
+staay
+staix
+staiy
+staz
+stazx
+stxa
+stxz
+stxzy
+stya
+styz
+styzx
+taxn
+tayn
+trap1
+trap10
+trap11
+trap12
+trap13
+trap14
+trap15
+trap16
+trap17
+trap2
+trap3
+trap4
+trap5
+trap6
+trap7
+trap8
+trap9
+tsxn
+txan
+txsn
+tyan
 */
 
 .globl test_adca
@@ -290,6 +389,105 @@ mmu
 .globl test_lsrzx
 .globl test_lxab
 .globl test_mmu
+.globl test_mmufetch
+.globl test_nopa
+.globl test_nopax
+.globl test_nopb
+.globl test_nopn
+.globl test_nopz
+.globl test_nopzx
+.globl test_oraa
+.globl test_oraax
+.globl test_oraay
+.globl test_orab
+.globl test_oraix
+.globl test_oraiy
+.globl test_oraz
+.globl test_orazx
+.globl test_phan
+.globl test_phpn
+.globl test_plan
+.globl test_plpn
+.globl test_rlaa
+.globl test_rlaax
+.globl test_rlaay
+.globl test_rlaix
+.globl test_rlaiy
+.globl test_rlaz
+.globl test_rlazx
+.globl test_rola
+.globl test_rolax
+.globl test_roln
+.globl test_rolz
+.globl test_rolzx
+.globl test_rora
+.globl test_rorax
+.globl test_rorn
+.globl test_rorz
+.globl test_rorzx
+.globl test_rraa
+.globl test_rraax
+.globl test_rraay
+.globl test_rraix
+.globl test_rraiy
+.globl test_rraz
+.globl test_rrazx
+.globl test_rtin
+.globl test_rtsn
+.globl test_sbca
+.globl test_sbcax
+.globl test_sbcay
+.globl test_sbcb
+.globl test_sbcbeb
+.globl test_sbcix
+.globl test_sbciy
+.globl test_sbcz
+.globl test_sbczx
+.globl test_sbxb
+.globl test_secn
+.globl test_sedn
+.globl test_sein
+.globl test_shaay
+.globl test_shaiy
+.globl test_shsay
+.globl test_shxay
+.globl test_shyax
+.globl test_staa
+.globl test_staax
+.globl test_staay
+.globl test_staix
+.globl test_staiy
+.globl test_staz
+.globl test_stazx
+.globl test_stxa
+.globl test_stxz
+.globl test_stxzy
+.globl test_stya
+.globl test_styz
+.globl test_styzx
+.globl test_taxn
+.globl test_tayn
+.globl test_trap1
+.globl test_trap10
+.globl test_trap11
+.globl test_trap12
+.globl test_trap13
+.globl test_trap14
+.globl test_trap15
+.globl test_trap16
+.globl test_trap17
+.globl test_trap2
+.globl test_trap3
+.globl test_trap4
+.globl test_trap5
+.globl test_trap6
+.globl test_trap7
+.globl test_trap8
+.globl test_trap9
+.globl test_tsxn
+.globl test_txan
+.globl test_txsn
+.globl test_tyan
 
 test_adca:  .incbin "./Testsuite/adca"
 test_adcax: .incbin "./Testsuite/adcax"
@@ -435,4 +633,103 @@ test_lsrz: .incbin "./Testsuite/lsrz"
 test_lsrzx: .incbin "./Testsuite/lsrzx"
 test_lxab: .incbin "./Testsuite/lxab"
 test_mmu: .incbin "./Testsuite/mmu"
+test_mmufetch: .incbin "./Testsuite/mmufetch"
+test_nopa: .incbin "./Testsuite/nopa"
+test_nopax: .incbin "./Testsuite/nopax"
+test_nopb: .incbin "./Testsuite/nopb"
+test_nopn: .incbin "./Testsuite/nopn"
+test_nopz: .incbin "./Testsuite/nopz"
+test_nopzx: .incbin "./Testsuite/nopzx"
+test_oraa: .incbin "./Testsuite/oraa"
+test_oraax: .incbin "./Testsuite/oraax"
+test_oraay: .incbin "./Testsuite/oraay"
+test_orab: .incbin "./Testsuite/orab"
+test_oraix: .incbin "./Testsuite/oraix"
+test_oraiy: .incbin "./Testsuite/oraiy"
+test_oraz: .incbin "./Testsuite/oraz"
+test_orazx: .incbin "./Testsuite/orazx"
+test_phan: .incbin "./Testsuite/phan"
+test_phpn: .incbin "./Testsuite/phpn"
+test_plan: .incbin "./Testsuite/plan"
+test_plpn: .incbin "./Testsuite/plpn"
+test_rlaa: .incbin "./Testsuite/rlaa"
+test_rlaax: .incbin "./Testsuite/rlaax"
+test_rlaay: .incbin "./Testsuite/rlaay"
+test_rlaix: .incbin "./Testsuite/rlaix"
+test_rlaiy: .incbin "./Testsuite/rlaiy"
+test_rlaz: .incbin "./Testsuite/rlaz"
+test_rlazx: .incbin "./Testsuite/rlazx"
+test_rola: .incbin "./Testsuite/rola"
+test_rolax: .incbin "./Testsuite/rolax"
+test_roln: .incbin "./Testsuite/roln"
+test_rolz: .incbin "./Testsuite/rolz"
+test_rolzx: .incbin "./Testsuite/rolzx"
+test_rora: .incbin "./Testsuite/rora"
+test_rorax: .incbin "./Testsuite/rorax"
+test_rorn: .incbin "./Testsuite/rorn"
+test_rorz: .incbin "./Testsuite/rorz"
+test_rorzx: .incbin "./Testsuite/rorzx"
+test_rraa: .incbin "./Testsuite/rraa"
+test_rraax: .incbin "./Testsuite/rraax"
+test_rraay: .incbin "./Testsuite/rraay"
+test_rraix: .incbin "./Testsuite/rraix"
+test_rraiy: .incbin "./Testsuite/rraiy"
+test_rraz: .incbin "./Testsuite/rraz"
+test_rrazx: .incbin "./Testsuite/rrazx"
+test_rtin: .incbin "./Testsuite/rtin"
+test_rtsn: .incbin "./Testsuite/rtsn"
+test_sbca: .incbin "./Testsuite/sbca"
+test_sbcax: .incbin "./Testsuite/sbcax"
+test_sbcay: .incbin "./Testsuite/sbcay"
+test_sbcb: .incbin "./Testsuite/sbcb"
+test_sbcbeb: .incbin "./Testsuite/sbcb(eb)"
+test_sbcix: .incbin "./Testsuite/sbcix"
+test_sbciy: .incbin "./Testsuite/sbciy"
+test_sbcz: .incbin "./Testsuite/sbcz"
+test_sbczx: .incbin "./Testsuite/sbczx"
+test_sbxb: .incbin "./Testsuite/sbxb"
+test_secn: .incbin "./Testsuite/secn"
+test_sedn: .incbin "./Testsuite/sedn"
+test_sein: .incbin "./Testsuite/sein"
+test_shaay: .incbin "./Testsuite/shaay"
+test_shaiy: .incbin "./Testsuite/shaiy"
+test_shsay: .incbin "./Testsuite/shsay"
+test_shxay: .incbin "./Testsuite/shxay"
+test_shyax: .incbin "./Testsuite/shyax"
+test_staa: .incbin "./Testsuite/staa"
+test_staax: .incbin "./Testsuite/staax"
+test_staay: .incbin "./Testsuite/staay"
+test_staix: .incbin "./Testsuite/staix"
+test_staiy: .incbin "./Testsuite/staiy"
+test_staz: .incbin "./Testsuite/staz"
+test_stazx: .incbin "./Testsuite/stazx"
+test_stxa: .incbin "./Testsuite/stxa"
+test_stxz: .incbin "./Testsuite/stxz"
+test_stxzy: .incbin "./Testsuite/stxzy"
+test_stya: .incbin "./Testsuite/stya"
+test_styz: .incbin "./Testsuite/styz"
+test_styzx: .incbin "./Testsuite/styzx"
+test_taxn: .incbin "./Testsuite/taxn"
+test_tayn: .incbin "./Testsuite/tayn"
+test_trap1: .incbin "./Testsuite/trap1"
+test_trap10: .incbin "./Testsuite/trap10"
+test_trap11: .incbin "./Testsuite/trap11"
+test_trap12: .incbin "./Testsuite/trap12"
+test_trap13: .incbin "./Testsuite/trap13"
+test_trap14: .incbin "./Testsuite/trap14"
+test_trap15: .incbin "./Testsuite/trap15"
+test_trap16: .incbin "./Testsuite/trap16"
+test_trap17: .incbin "./Testsuite/trap17"
+test_trap2: .incbin "./Testsuite/trap2"
+test_trap3: .incbin "./Testsuite/trap3"
+test_trap4: .incbin "./Testsuite/trap4"
+test_trap5: .incbin "./Testsuite/trap5"
+test_trap6: .incbin "./Testsuite/trap6"
+test_trap7: .incbin "./Testsuite/trap7"
+test_trap8: .incbin "./Testsuite/trap8"
+test_trap9: .incbin "./Testsuite/trap9"
+test_tsxn: .incbin "./Testsuite/tsxn"
+test_txan: .incbin "./Testsuite/txan"
+test_txsn: .incbin "./Testsuite/txsn"
+test_tyan: .incbin "./Testsuite/tyan"
 

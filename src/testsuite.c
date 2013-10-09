@@ -149,7 +149,106 @@ lsrn	OK
 lsrz	OK
 lsrzx	OK
 lxab	OK
-mmu
+mmu	fail 143
+mmufetch fail 
+nopa	OK
+nopax	OK
+nopb	OK
+nopn	OK
+nopz	OK
+nopzx	OK
+oraa	OK
+oraax	OK
+oraay	OK
+orab	OK
+oraix	OK
+oraiy	OK
+oraz	OK
+orazx	OK
+phan	OK
+phpn	OK
+plan	OK
+plpn	OK
+rlaa	OK
+rlaax	OK
+rlaay	OK
+rlaix	OK
+rlaiy	OK
+rlaz	OK
+rlazx	OK
+rola	OK
+rolax	OK
+roln	OK
+rolz	OK
+rolzx	OK
+rora	OK
+rorax	OK
+rorn	OK
+rorz	OK
+rorzx	OK
+rraa	OK
+rraax	OK
+rraay	OK
+rraix	OK
+rraiy	OK
+rraz	OK
+rrazx	OK
+rtin	OK
+rtsn	OK
+sbca	fail 189
+sbcax
+sbcay
+sbcb
+sbcb(eb)
+sbcix
+sbciy
+sbcz
+sbczx
+sbxb
+secn
+sedn
+sein
+shaay
+shaiy
+shsay
+shxay
+shyax
+staa
+staax
+staay
+staix
+staiy
+staz
+stazx
+stxa
+stxz
+stxzy
+stya
+styz
+styzx
+taxn
+tayn
+trap1
+trap10
+trap11
+trap12
+trap13
+trap14
+trap15
+trap16
+trap17
+trap2
+trap3
+trap4
+trap5
+trap6
+trap7
+trap8
+trap9
+tsxn
+txan
+txsn
+tyan
 */
 
 extern byte test_adca[];
@@ -296,11 +395,110 @@ extern byte test_lsrz[];
 extern byte test_lsrzx[];
 extern byte test_lxab[];
 extern byte test_mmu[];
+extern byte test_mmufetch[];
+extern byte test_nopa[];
+extern byte test_nopax[];
+extern byte test_nopb[];
+extern byte test_nopn[];
+extern byte test_nopz[];
+extern byte test_nopzx[];
+extern byte test_oraa[];
+extern byte test_oraax[];
+extern byte test_oraay[];
+extern byte test_orab[];
+extern byte test_oraix[];
+extern byte test_oraiy[];
+extern byte test_oraz[];
+extern byte test_orazx[];
+extern byte test_phan[];
+extern byte test_phpn[];
+extern byte test_plan[];
+extern byte test_plpn[];
+extern byte test_rlaa[];
+extern byte test_rlaax[];
+extern byte test_rlaay[];
+extern byte test_rlaix[];
+extern byte test_rlaiy[];
+extern byte test_rlaz[];
+extern byte test_rlazx[];
+extern byte test_rola[];
+extern byte test_rolax[];
+extern byte test_roln[];
+extern byte test_rolz[];
+extern byte test_rolzx[];
+extern byte test_rora[];
+extern byte test_rorax[];
+extern byte test_rorn[];
+extern byte test_rorz[];
+extern byte test_rorzx[];
+extern byte test_rraa[];
+extern byte test_rraax[];
+extern byte test_rraay[];
+extern byte test_rraix[];
+extern byte test_rraiy[];
+extern byte test_rraz[];
+extern byte test_rrazx[];
+extern byte test_rtin[];
+extern byte test_rtsn[];
+extern byte test_sbca[];
+extern byte test_sbcax[];
+extern byte test_sbcay[];
+extern byte test_sbcb[];
+extern byte test_sbcbeb[];
+extern byte test_sbcix[];
+extern byte test_sbciy[];
+extern byte test_sbcz[];
+extern byte test_sbczx[];
+extern byte test_sbxb[];
+extern byte test_secn[];
+extern byte test_sedn[];
+extern byte test_sein[];
+extern byte test_shaay[];
+extern byte test_shaiy[];
+extern byte test_shsay[];
+extern byte test_shxay[];
+extern byte test_shyax[];
+extern byte test_staa[];
+extern byte test_staax[];
+extern byte test_staay[];
+extern byte test_staix[];
+extern byte test_staiy[];
+extern byte test_staz[];
+extern byte test_stazx[];
+extern byte test_stxa[];
+extern byte test_stxz[];
+extern byte test_stxzy[];
+extern byte test_stya[];
+extern byte test_styz[];
+extern byte test_styzx[];
+extern byte test_taxn[];
+extern byte test_tayn[];
+extern byte test_trap1[];
+extern byte test_trap10[];
+extern byte test_trap11[];
+extern byte test_trap12[];
+extern byte test_trap13[];
+extern byte test_trap14[];
+extern byte test_trap15[];
+extern byte test_trap16[];
+extern byte test_trap17[];
+extern byte test_trap2[];
+extern byte test_trap3[];
+extern byte test_trap4[];
+extern byte test_trap5[];
+extern byte test_trap6[];
+extern byte test_trap7[];
+extern byte test_trap8[];
+extern byte test_trap9[];
+extern byte test_tsxn[];
+extern byte test_txan[];
+extern byte test_txsn[];
+extern byte test_tyan[];
 
 int initialized = 0;
-int testNumber=68;
+int testNumber=189;
 
-#define TESTCOUNT 144
+#define TESTCOUNT 244
 void* tests[TESTCOUNT];
 
 
@@ -467,6 +665,105 @@ void init() {
 	tests[i++] = test_lsrzx;
 	tests[i++] = test_lxab;
 	tests[i++] = test_mmu;
+	tests[i++] = test_mmufetch;
+	tests[i++] = test_nopa;
+	tests[i++] = test_nopax;
+	tests[i++] = test_nopb;
+	tests[i++] = test_nopn;
+	tests[i++] = test_nopz;
+	tests[i++] = test_nopzx;
+	tests[i++] = test_oraa;
+	tests[i++] = test_oraax;
+	tests[i++] = test_oraay;
+	tests[i++] = test_orab;
+	tests[i++] = test_oraix;
+	tests[i++] = test_oraiy;
+	tests[i++] = test_oraz;
+	tests[i++] = test_orazx;
+	tests[i++] = test_phan;
+	tests[i++] = test_phpn;
+	tests[i++] = test_plan;
+	tests[i++] = test_plpn;
+	tests[i++] = test_rlaa;
+	tests[i++] = test_rlaax;
+	tests[i++] = test_rlaay;
+	tests[i++] = test_rlaix;
+	tests[i++] = test_rlaiy;
+	tests[i++] = test_rlaz;
+	tests[i++] = test_rlazx;
+	tests[i++] = test_rola;
+	tests[i++] = test_rolax;
+	tests[i++] = test_roln;
+	tests[i++] = test_rolz;
+	tests[i++] = test_rolzx;
+	tests[i++] = test_rora;
+	tests[i++] = test_rorax;
+	tests[i++] = test_rorn;
+	tests[i++] = test_rorz;
+	tests[i++] = test_rorzx;
+	tests[i++] = test_rraa;
+	tests[i++] = test_rraax;
+	tests[i++] = test_rraay;
+	tests[i++] = test_rraix;
+	tests[i++] = test_rraiy;
+	tests[i++] = test_rraz;
+	tests[i++] = test_rrazx;
+	tests[i++] = test_rtin;
+	tests[i++] = test_rtsn;
+	tests[i++] = test_sbca;
+	tests[i++] = test_sbcax;
+	tests[i++] = test_sbcay;
+	tests[i++] = test_sbcb;
+	tests[i++] = test_sbcbeb;
+	tests[i++] = test_sbcix;
+	tests[i++] = test_sbciy;
+	tests[i++] = test_sbcz;
+	tests[i++] = test_sbczx;
+	tests[i++] = test_sbxb;
+	tests[i++] = test_secn;
+	tests[i++] = test_sedn;
+	tests[i++] = test_sein;
+	tests[i++] = test_shaay;
+	tests[i++] = test_shaiy;
+	tests[i++] = test_shsay;
+	tests[i++] = test_shxay;
+	tests[i++] = test_shyax;
+	tests[i++] = test_staa;
+	tests[i++] = test_staax;
+	tests[i++] = test_staay;
+	tests[i++] = test_staix;
+	tests[i++] = test_staiy;
+	tests[i++] = test_staz;
+	tests[i++] = test_stazx;
+	tests[i++] = test_stxa;
+	tests[i++] = test_stxz;
+	tests[i++] = test_stxzy;
+	tests[i++] = test_stya;
+	tests[i++] = test_styz;
+	tests[i++] = test_styzx;
+	tests[i++] = test_taxn;
+	tests[i++] = test_tayn;
+	tests[i++] = test_trap1;
+	tests[i++] = test_trap10;
+	tests[i++] = test_trap11;
+	tests[i++] = test_trap12;
+	tests[i++] = test_trap13;
+	tests[i++] = test_trap14;
+	tests[i++] = test_trap15;
+	tests[i++] = test_trap16;
+	tests[i++] = test_trap17;
+	tests[i++] = test_trap2;
+	tests[i++] = test_trap3;
+	tests[i++] = test_trap4;
+	tests[i++] = test_trap5;
+	tests[i++] = test_trap6;
+	tests[i++] = test_trap7;
+	tests[i++] = test_trap8;
+	tests[i++] = test_trap9;
+	tests[i++] = test_tsxn;
+	tests[i++] = test_txan;
+	tests[i++] = test_txsn;
+	tests[i++] = test_tyan;
 	
 	initialized=1;
 }
