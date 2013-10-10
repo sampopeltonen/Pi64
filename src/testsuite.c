@@ -50,7 +50,7 @@ bitz	OK
 bmir	OK
 bner	OK
 bplr	OK
-branchwrap	OK
+branchwrap OK
 brkn	OK
 bvcr	OK
 bvsr	OK
@@ -99,14 +99,14 @@ inca	OK
 incax	OK
 incz	OK
 inczx	OK
-insa	fail ins uses SBC logic, test SBC first 93
-insax
-insay
-insix
-insiy
-insz
-inszx
-inxn	OK
+insa	OK
+insax	OK
+insay	OK
+insix	OK
+insiy	OK
+insz	OK
+inszx	OK
+inxn	OK  <-- #100
 inyn	OK
 jmpi	OK
 jmpw	OK
@@ -149,8 +149,8 @@ lsrn	OK
 lsrz	OK
 lsrzx	OK
 lxab	OK
-mmu	fail 143
-mmufetch fail 
+mmu	FAIL 143
+mmufetch FAIL 
 nopa	OK
 nopax	OK
 nopb	OK
@@ -196,59 +196,59 @@ rrazx	OK
 rtin	OK
 rtsn	OK
 sbca	fail 189
-sbcax
-sbcay
-sbcb
+sbcax	fail (V flag in Decimal mode)
+sbcay	fail same
+sbcb	fail same
 sbcb(eb)
 sbcix
 sbciy
 sbcz
 sbczx
-sbxb
-secn
-sedn
-sein
-shaay
-shaiy
-shsay
-shxay
-shyax
-staa
-staax
-staay
-staix
-staiy
-staz
-stazx
-stxa
-stxz
-stxzy
-stya
-styz
-styzx
-taxn
-tayn
-trap1
-trap10
-trap11
-trap12
-trap13
-trap14
-trap15
-trap16
-trap17
-trap2
-trap3
-trap4
-trap5
-trap6
-trap7
-trap8
-trap9
-tsxn
-txan
-txsn
-tyan
+sbxb	OK
+secn	OK
+sedn	OK
+sein	OK
+shaay	OK
+shaiy	OK
+shsay	OK
+shxay	OK
+shyax	OK
+staa	OK
+staax	OK
+staay	OK
+staix	OK
+staiy	OK
+staz	OK
+stazx	OK
+stxa	OK
+stxz	OK
+stxzy	OK
+stya	OK
+styz	OK
+styzx	OK
+taxn	OK
+tayn	OK
+trap1	OK
+trap10	OK
+trap11	OK
+trap12	FAIL 225
+trap13	OK
+trap14	OK
+trap15	FAIL ora 1
+trap16	OK
+trap17	OK
+trap2	OK
+trap3	OK
+trap4	OK
+trap5	OK
+trap6	OK
+trap7	OK
+trap8	OK
+trap9	OK
+tsxn	OK
+txan	OK
+txsn	OK
+tyan	OK	<-- #242
 */
 
 extern byte test_adca[];
@@ -494,9 +494,10 @@ extern byte test_tsxn[];
 extern byte test_txan[];
 extern byte test_txsn[];
 extern byte test_tyan[];
+extern byte test_end[];
 
 int initialized = 0;
-int testNumber=189;
+int testNumber=93;
 
 #define TESTCOUNT 244
 void* tests[TESTCOUNT];
@@ -764,6 +765,7 @@ void init() {
 	tests[i++] = test_txan;
 	tests[i++] = test_txsn;
 	tests[i++] = test_tyan;
+	tests[i++] = test_end;
 	
 	initialized=1;
 }

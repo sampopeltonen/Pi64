@@ -488,6 +488,7 @@ tyan
 .globl test_txan
 .globl test_txsn
 .globl test_tyan
+.globl test_end
 
 test_adca:  .incbin "./Testsuite/adca"
 test_adcax: .incbin "./Testsuite/adcax"
@@ -732,4 +733,4 @@ test_tsxn: .incbin "./Testsuite/tsxn"
 test_txan: .incbin "./Testsuite/txan"
 test_txsn: .incbin "./Testsuite/txsn"
 test_tyan: .incbin "./Testsuite/tyan"
-
+test_end: .byte 00
