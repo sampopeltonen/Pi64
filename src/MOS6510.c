@@ -737,68 +737,51 @@ void mneRTS(int am, int cycles) {
 extern void printProcessorStatus();
 
 void mneSBC(int am, int cycles) {
-	word target;
-	cyc=cycles + resolveAddressModeTarget(am, &target);
-	byte tmp;
-	if(P & PFLAG_DECIMAL) {
-		/* A:
+        word target;
+        cyc = cycles + resolveAddressModeTarget(am, &target);
+	byte targetValue = ~memReadByte(target);
+        word tmp = targetValue + ((P & PFLAG_CARRY) ? 1 : 0);
+        word t = A + tmp;
+        if((t&0xff)==0) setPFlag(PFLAG_ZERO);
+        else clearPFlag(PFLAG_ZERO);
+
+        if(P & PFLAG_DECIMAL) {
+        	((A^t)&(tmp^t)&0x80) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+		/*
+		problem with these values:
+		A=99
+		src=88
+		temppu = 99-88-1 = 10
+		Tests (sbc*) claim V should be set 
+		*/
+		//(((AAA^temppu) & 0x80) && ((AAA^src) & 0x80)) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+		targetValue = ~targetValue;
+                // Decimal mode according to http://www.6502.org/tutorials/decimal_mode.html
+		/*
 		3a. AL = (A & $0F) - (B & $0F) + C-1
 		3b. If AL < 0, then AL = ((AL - $06) & $0F) - $10
 		3c. A = (A & $F0) - (B & $F0) + AL
 		3d. If A < 0, then A = A - $60
 		3e. The accumulator result is the lower 8 bits of A
-		*/	
-		sword tmpA = A;
-		byte targetValue = memReadByte(target);
-		sbyte AL = (tmpA & 0xf) - (targetValue & 0xf) + ((P & PFLAG_CARRY) ? 1 : 0)-1;
-		if(AL<0) AL = ((AL - 0x6) & 0xf) - 0x10;
-		tmpA = (A & 0xf0) - (targetValue & 0xf0) + AL;
-		if(tmpA<0) tmpA = tmpA - 0x60;
-		A = tmpA & 0xff; 
-
-		//TODO: C N V Z should be calculated as in "bin" mode (?)
-		// http://www.6502.org/tutorials/decimal_mode.html
-		
-		//printf("SBCd");
-		//printf1("V=%x",(P&PFLAG_OVERFLOW?1:0));
-
-	}
-	else {
-
-		tmp = memReadByte(target) + ((P & PFLAG_CARRY) ? 0 : 1);
-		(tmp>A) ? clearPFlag(PFLAG_CARRY) : setPFlag(PFLAG_CARRY);
-
-		// V formula in SBC differs little bit from what it's in ADC
-		// this is ADC formula: V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
-		
-		byte bA8 = (A & B8);
-		//byte bB8 = (tmp & B8);		// ADC version
-		byte bB8 = ((255-tmp) & B8);		// SBC version
-
-		A = A - tmp;
-		
-		byte bC7 = ((A & B7) << 1);  // shifted to 8 position
-		// Use ~(a & b) or (~a | ~b) for (a NAND b) 
-		/*
-		A8 = 0
-		B8 = 0
-		C7 = 1
-		
-		V = not (((A8 NOR B8) and C7) NOR ((A8 NAND B8) NOR C7))
-		V = not (((0 NOR 0) and 1) NOR ((0 NAND 0) NOR 1))
-		V = not ((1 and 1) NOR (1 NOR 1))
-		V = not (1 NOR 0)
-		V = not 0
-		V = 1
 		*/
-		byte V = (((bA8 ^ bB8) & bC7) ^ ((~(bA8 & bB8)) ^ bC7));   // inverted result
+                sword tmpA = A;
+                sword AL = (tmpA & 0xf) - (targetValue & 0xf) + ((P & PFLAG_CARRY) ? 1 : 0) - 1;
+                if(AL<0x0) AL = ((AL - 0x6) & 0xf) - 0x10;
+                tmpA = (tmpA & 0xf0) - (targetValue & 0xf0) + AL;
+                if(B8 & tmpA) setPFlag(PFLAG_NEGATIVE);
+                else clearPFlag(PFLAG_NEGATIVE);
+                if(tmpA < 0x0) tmpA = tmpA - 0x60;
+                A = tmpA & 0xff;
+        }
+        else {
+        	((A^t)&(tmp^t)&0x80) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+                A = t & 0xff;
+        	if(B8 & A) setPFlag(PFLAG_NEGATIVE);
+        	else clearPFlag(PFLAG_NEGATIVE);
+        }
+        if(t>0xff) setPFlag(PFLAG_CARRY);
+        else clearPFlag(PFLAG_CARRY);
 
-		((V & B8)==0) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
-		(A & B8) ? setPFlag(PFLAG_NEGATIVE) : clearPFlag(PFLAG_NEGATIVE);
-		(A==0) ? setPFlag(PFLAG_ZERO) : clearPFlag(PFLAG_ZERO);
-		//printf("SBCd");
-		//printf1("V=%x",(P&PFLAG_OVERFLOW?1:0));
-	}
 }
 
 void mneSEC(int am, int cycles) {
@@ -810,7 +793,8 @@ void mneSEC(int am, int cycles) {
 }
 
 void mneSED(int am, int cycles) {
-  printf("SED not implemented."); exit(1);
+	cyc = cycles;
+	setPFlag(PFLAG_DECIMAL);
 }
 
 void mneSEI(int am, int cycles) {
@@ -996,28 +980,45 @@ void mneDCP(int am, int cycles) {
 void mneINS(int am, int cycles) {
 	// aka ISC or ISB
 	// This opcode INCs the contents of a memory location and then SBCs the result from the A register.
-	/*
-	Obviously the undocumented instructions RRA (ROR+ADC) and ISB
-	(INC+SBC) have inherited also the decimal operation from the official
-	instructions ADC and SBC.
-	*/
-	cyc = cycles;
+        cyc = cycles;
+
+        // INC PART
         word target;
         resolveAddressModeTarget(am, &target);
-        byte targetVal = memReadByte(target);
-        targetVal & B8 ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
-        targetVal++;
-        memWriteByte(target, targetVal);
-	printf("INS unimpl.");
-	exit(1);
+        byte targetValue = memReadByte(target);
+        targetValue++;
+        memWriteByte(target, targetValue);
+
+	// SBC PART
+        targetValue = ~targetValue;
+        word tmp = targetValue + ((P & PFLAG_CARRY) ? 1 : 0);
+        word t = A + tmp;
+        if((t&0xff)==0) setPFlag(PFLAG_ZERO);
+        else clearPFlag(PFLAG_ZERO);
+
+        if(P & PFLAG_DECIMAL) {
+                ((A^t)&(tmp^t)&0x80) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+                targetValue = ~targetValue;
+                sword tmpA = A;
+                sword AL = (tmpA & 0xf) - (targetValue & 0xf) + ((P & PFLAG_CARRY) ? 1 : 0) - 1;
+                if(AL<0x0) AL = ((AL - 0x6) & 0xf) - 0x10;
+                tmpA = (tmpA & 0xf0) - (targetValue & 0xf0) + AL;
+                if(B8 & tmpA) setPFlag(PFLAG_NEGATIVE);
+                else clearPFlag(PFLAG_NEGATIVE);
+                if(tmpA < 0x0) tmpA = tmpA - 0x60;
+                A = tmpA & 0xff;
+        }
+        else {
+                ((A^t)&(tmp^t)&0x80) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
+                A = t & 0xff;
+                if(B8 & A) setPFlag(PFLAG_NEGATIVE);
+                else clearPFlag(PFLAG_NEGATIVE);
+        }
+        if(t>0xff) setPFlag(PFLAG_CARRY);
+        else clearPFlag(PFLAG_CARRY);
 }
 
 void mneLAS(int am, int cycles) {
-	/*
-	This opcode ANDs the contents of a memory location with the contents of the 
-	stack pointer register and stores the result in the accumulator, the X 
-	register, and the stack pointer.  Affected flags: N Z.
-	*/
 	cyc = cycles;
 	word target;
         resolveAddressModeTarget(am, &target);
@@ -1140,9 +1141,55 @@ void mneRRA(int am, int cycles) {
 		if(t>0xff) setPFlag(PFLAG_CARRY);
 		else clearPFlag(PFLAG_CARRY);
 	}
-	
+}
 
+void mneSBX(int am, int cycles) {
+	// aka SAX
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	X = A & X;	
+	byte value = memReadByte(target);
+        (X>=value) ? setPFlag(PFLAG_CARRY) : clearPFlag(PFLAG_CARRY);
+         X -= value;
+        setZeroAndNegativePFlags(&X);
+}
 
+void mneSHA(int am, int cycles) {
+	// aka AXA
+	cyc = cycles;
+	word target;
+	resolveAddressModeTarget(am, &target);
+	byte crazyvalue = (target >> 8) + 1;
+	memWriteByte(target, A & X & crazyvalue);
+}
+
+void mneSHS(int am, int cycles) {
+	// aka TAS
+        cyc = cycles;
+        word target;
+        resolveAddressModeTarget(am, &target);
+        byte crazyvalue = (target >> 8) + 1;
+	S = A & X;
+        memWriteByte(target, S & crazyvalue);	
+}
+
+void mneSHX(int am, int cycles) {
+	// aka XAS
+	cyc = cycles;
+        word target;
+        resolveAddressModeTarget(am, &target);
+        byte crazyvalue = (target >> 8) + 1;
+        memWriteByte(target, X & crazyvalue);
+}
+
+void mneSHY(int am, int cycles) {
+	// aka SAY
+	cyc = cycles;
+        word target;
+        resolveAddressModeTarget(am, &target);
+        byte crazyvalue = (target >> 8) + 1;
+        memWriteByte(target, Y & crazyvalue);
 }
 
 void initMnemonicArray() {
@@ -1294,7 +1341,7 @@ void initMnemonicArray() {
 	i=0x90; mneAM[i].pt2MnemonicHandler = &mneBCC; mneAM[i].cycles = 2; mneAM[i].am = RELATIVE;
 	i=0x91; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_Y;
 	i=0x92; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x93; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x93; mneAM[i].pt2MnemonicHandler = &mneSHA; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_Y;
 	i=0x94; mneAM[i].pt2MnemonicHandler = &mneSTY; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0x95; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0x96; mneAM[i].pt2MnemonicHandler = &mneSTX; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_Y;
@@ -1302,11 +1349,11 @@ void initMnemonicArray() {
 	i=0x98; mneAM[i].pt2MnemonicHandler = &mneTYA; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0x99; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_Y;
 	i=0x9a; mneAM[i].pt2MnemonicHandler = &mneTXS; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
-	i=0x9b; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x9c; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x9b; mneAM[i].pt2MnemonicHandler = &mneSHS; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_Y;
+	i=0x9c; mneAM[i].pt2MnemonicHandler = &mneSHY; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_X;
 	i=0x9d; mneAM[i].pt2MnemonicHandler = &mneSTA; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_X;
-	i=0x9e; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
-	i=0x9f; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0x9e; mneAM[i].pt2MnemonicHandler = &mneSHX; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_Y;
+	i=0x9f; mneAM[i].pt2MnemonicHandler = &mneSHA; mneAM[i].cycles = 5; mneAM[i].am = ABSOLUTE_Y;
 	i=0xa0; mneAM[i].pt2MnemonicHandler = &mneLDY; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0xa1; mneAM[i].pt2MnemonicHandler = &mneLDA; mneAM[i].cycles = 6; mneAM[i].am = INDIRECT_X;
 	i=0xa2; mneAM[i].pt2MnemonicHandler = &mneLDX; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
@@ -1350,7 +1397,7 @@ void initMnemonicArray() {
 	i=0xc8; mneAM[i].pt2MnemonicHandler = &mneINY; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
 	i=0xc9; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0xca; mneAM[i].pt2MnemonicHandler = &mneDEX; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
-	i=0xcb; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
+	i=0xcb; mneAM[i].pt2MnemonicHandler = &mneSBX; mneAM[i].cycles = 2; mneAM[i].am = IMMEDIATE;
 	i=0xcc; mneAM[i].pt2MnemonicHandler = &mneCPY; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0xcd; mneAM[i].pt2MnemonicHandler = &mneCMP; mneAM[i].cycles = 4; mneAM[i].am = ABSOLUTE;
 	i=0xce; mneAM[i].pt2MnemonicHandler = &mneDEC; mneAM[i].cycles = 6; mneAM[i].am = ABSOLUTE;
