@@ -199,7 +199,7 @@ sbca	fail 189
 sbcax	fail (V flag in Decimal mode)
 sbcay	fail same
 sbcb	fail same
-sbcb(eb)
+sbcb(eb) fail
 sbcix
 sbciy
 sbcz
@@ -231,10 +231,10 @@ tayn	OK
 trap1	OK
 trap10	OK
 trap11	OK
-trap12	FAIL 225
+trap12	OK
 trap13	OK
 trap14	OK
-trap15	FAIL ora 1
+trap15	OK
 trap16	OK
 trap17	OK
 trap2	OK
@@ -497,7 +497,7 @@ extern byte test_tyan[];
 extern byte test_end[];
 
 int initialized = 0;
-int testNumber=93;
+int testNumber=189;
 
 #define TESTCOUNT 244
 void* tests[TESTCOUNT];

@@ -86,8 +86,12 @@ byte memReadByte(word address) {
 
 
 word memReadWord(word address) {
-
 	return(memReadByte(address) + (memReadByte(address + 1) << 8));
+}
+
+word memReadWordWithBoundaryCross(byte addressLo, byte addressHi) {
+	word addressBase = addressHi << 8;
+	return(memReadByte(addressBase+addressLo) + (memReadByte(addressBase+((byte)(addressLo+1))) << 8));
 }
 
 void memWriteByte(word address, byte data) {

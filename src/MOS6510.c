@@ -145,22 +145,18 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 		case INDIRECT:
 			oper1 = readMemoryPC();
 			oper2 = readMemoryPC();
-			*targetAddress =  memReadWord((oper2 << 8) + oper1);
-			#if DEBUG_6510
-				printf("INDIRECTION: operand address=%X\n",(oper2 << 8) + oper1);
-				printf("INDIRECTION: targetAddress=%X\n",*targetAddress);
-			#endif
+			*targetAddress = memReadWordWithBoundaryCross(oper1, oper2);
 			break;
 		case INDIRECT_X:
 			oper1 = readMemoryPC();
 			tmpb = X + oper1;
-			*targetAddress = memReadWord(tmpb);
+			*targetAddress = memReadWordWithBoundaryCross(tmpb&0xff, tmpb>>8);
 			break;
 		case INDIRECT_Y:
 			oper1 = readMemoryPC();
 			tmpw = memReadByte(oper1) + Y;
 			if(tmpw>0xff) pageCrossed = 1; //if page crossed
-			tmpw += memReadByte(oper1+1) << 8;
+			tmpw += memReadByte((byte)(oper1+1)) << 8;
 			*targetAddress = tmpw;
 			break;
 		default:

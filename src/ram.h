@@ -15,6 +15,7 @@
 
 byte memReadByte(word address);
 word memReadWord(word address);
+word memReadWordWithBoundaryCross(byte addressLo, byte addressHi);
 void memWriteByte(word address, byte data);
 
 
