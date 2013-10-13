@@ -497,7 +497,7 @@ extern byte test_tyan[];
 extern byte test_end[];
 
 int initialized = 0;
-int testNumber=189;
+int testNumber=143;
 
 #define TESTCOUNT 244
 void* tests[TESTCOUNT];
