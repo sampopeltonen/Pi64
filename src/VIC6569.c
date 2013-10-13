@@ -103,27 +103,30 @@ byte isDENbit() {
 	return((vicRegisters[0x11] & B4)==B4);
 }
 
-// Address should be 0-$3fff because vic only has 14 address lines
-// rest 3 bits are provided by CIA2 (pointing to bank 0-3)
-byte vicMemReadByte(word address) {
-	//printf1("vicmemread addr %x", address);
-	if(address>0x3fff) {
-		printf1("incorrect vic ram access: %x\n",address);
-		exit(1);
-	}
+/*
+Address should be 0-$3fff because vic only has 14 address lines.
+Highest 2 bits are provided by CIA2 (pointing to bank 0-3).
 
-	// TODO: resolve the bank somehow (bits 15-16)
+AFAIK:
+Vic sees a data bus of 12 bits wide, highest 4 bits if this bus always
+point to data in the color ram area starting from $d800 in the normal
+address space. The address for this color ram access is 10 lowest bits
+of the requested address.
+*/
+word vicMemRead(word address) {
+
+	// TODO: resolve the bank (bits 15-16)
 	//word bit15 = 0x4000;
 	//word bit16 = 0x8000;
 
 	// TODO: char rom should only visible in banks 0 and 2
 	if(address>=0x1000 && address<0x2000) {
 		byte ret = characterROM[address-0x1000];
-		//printf1("ret %x",ret);
+		// TODO: figure out should the color ram also be accessed here?
 		return(ret);
 	}
-
-	return(memReadByte(address));
+	// read normally + highest bits from color ram
+	return(memReadByte(address) + (memReadByte((address & 0b1111111111) + 0xd800)<<8 ));
 }
 
 word vicGetCAddress() {
@@ -175,12 +178,6 @@ void vicCycle() {
 			VCBASE = 0;
 			//RC = 0; // TODO: oma lisäys
 			//printf(" *VCBASE=%d ",VCBASE);
-			/* 
-			if( SDL_Flip( tvscreen ) == -1 ) {
-				printf("Failed to flip screen.");
-				exit(1);
-			}
-			*/
 		}
 
 		// lets always disable the display in the beginning of the line 0x30
@@ -262,8 +259,9 @@ void vicCycle() {
 	if(rasterline_bad[currentRLcycle][0].busUsage==RLBG) {
 		if(FLAG_STATE==STATE_DISPLAY) {
 			// TODO: get real foreColor
-			drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemReadByte(vicGetGAddress(VML[VMLI])), colors[14]);
-
+			//drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemReadByte(vicGetGAddress(VML[VMLI])), colors[14]);
+			drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemRead(vicGetGAddress(VML[VMLI])), colors[(VML[VMLI]>>8) & 0xf]);
+			
 			// VC and VMLI are incremented after each g-access in display state.
 			VC++;
 			VMLI++;
@@ -282,8 +280,9 @@ void vicCycle() {
 			//putpixel(screen, currentRLcycle*8+4, currentRasterLine, colors[5]);
 			word videomatrixaddress = vicGetCAddress();
 			//printf1("C addr = %x",videomatrixaddress);
-			byte cdata = vicMemReadByte(videomatrixaddress); // address to font data address
-			VML[VMLI] = cdata;
+			word chardata = vicMemRead(videomatrixaddress); // address to font data address
+			//byte colordata = vicMemReadByte(videomatrixaddress+1) & 0b00001111;
+			VML[VMLI] = chardata; // + (colordata << 8);
 		}
 	}
 
