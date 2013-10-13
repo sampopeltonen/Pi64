@@ -28,59 +28,36 @@ extern byte characterROM[];
 byte mem[0xffff];
 
 
-
 byte memReadByte(word address) {
-
-	
-	/*if(address>=0x37 && address<=0x38) {
-		printf2("BAE: %x read value %x",address,mem[address]);
-	}*/
-
-
-	/*
-	if((R6510_FLAG_0 + R6510_FLAG_1) == ((R6510_FLAG_0 + R6510_FLAG_1) & ~*R6510)) {
-		monitorReadByte(MONITOR_MEM_BANK_MAIN, address);
-		return mem[address]; // ram visible in all areas
-	}*/
-
 	if(address >= 0xe000) {
 		if(R6510_FLAG_1 == (*R6510 & R6510_FLAG_1)) {
-			//monitorReadByte(MONITOR_MEM_BANK_ALTERNATIVE, address);
-			//printf1("Reading kernal rom from address %x",address-0xe000);
 			return(kernalROM[address-0xe000]);
 		}
 		else {
-			//monitorReadByte(MONITOR_MEM_BANK_MAIN, address);
 			return(mem[address]);
 		}
 	}
 
 	if(address >= 0xa000 && address <=0xbfff) {
 		if((R6510_FLAG_0 + R6510_FLAG_1) == ((R6510_FLAG_0 + R6510_FLAG_1) & *R6510)) {
-			//monitorReadByte(MONITOR_MEM_BANK_ALTERNATIVE, address);
 			return(basicROM[address-0xa000]);
 		}
 		else {
-			//monitorReadByte(MONITOR_MEM_BANK_MAIN, address);
 			return(mem[address]);
 		}
 	}
 
 	if(address >= 0xd000 && address <=0xdfff) {
+		if((*R6510&3)==0) return(mem[address]);
+
 		if((R6510_FLAG_2) == ((R6510_FLAG_2) & *R6510)) {
 			// ioarea is visible
-			//printf("reading from i/o area (%x) ioarea(%x) value=%x\n", address, address-0xd000, *ioarea[address-0xd000]);
-			//monitorReadByte(MONITOR_MEM_BANK_MAIN, address);
 			return(ioAreaReadByte(address-0xd000));
 		}
 		else {
-			//printf("reading from character rom area (%x)\n", address);
-			//monitorReadByte(MONITOR_MEM_BANK_ALTERNATIVE, address);
 			return(characterROM[address-0xd000]);
 		}
 	}
-
-	//monitorReadByte(MONITOR_MEM_BANK_MAIN, address);
 	return mem[address];
 }
 
@@ -96,26 +73,25 @@ word memReadWordWithBoundaryCross(byte addressLo, byte addressHi) {
 
 void memWriteByte(word address, byte data) {
 
+	if(address==1) {
+		mem[1]=(mem[1]&~mem[0]) + (data&mem[0]);
+	}
+
 	if(address >= 0xd000 && address <=0xdfff) {
 
 		if((R6510_FLAG_2) == ((R6510_FLAG_2) & *R6510)) {
 			ioAreaWriteByte(address-0xd000, data);
-			//monitorWriteByte(MONITOR_MEM_BANK_MAIN, address);
 		}
 		else {
-			//monitorWriteByte(MONITOR_MEM_BANK_MAIN, address);
 			mem[address] = data; // writing the mem underlying under character ROM area
 		}
 	}
 	else {
-		//monitorWriteByte(MONITOR_MEM_BANK_MAIN, address);
 		mem[address] = data;
 	}
-	//printf("memWrite adr %x = %x, ", address, mem[address]);
 }
 
 /*
-// mitä nämä ovat? olen unohtanut.
 void vicSetRegisterBits(word address, byte bits) {
 	mem[address] = mem[address] | bits;
 }
