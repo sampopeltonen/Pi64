@@ -40,13 +40,13 @@ extern uint64_t GetTimeStamp();
 //extern void setBgColour (unsigned int);
 extern word VICforeColour[];
 extern word VICbgColour[];
-extern void drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);
+extern void drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);  // cathoderay.s
 
 // controlled by DEN bit, inspected during rasterline 0x30
 int displayEnabled = 0;
 
-unsigned int  currentRasterLine = 0;
-//word currentXCoord = 0;
+unsigned int currentRasterLine = 0;
+unsigned int currentXCoord = 0;
 unsigned int currentRLcycle = 0;   // 63 cycles per line in PAL machine (range 0-62)
 
 uint32_t debugTimeMeasure = 0;
@@ -66,6 +66,9 @@ uint32_t colors[16];
 
 int aecRunningCounter = 3;
 
+int borderMainFlip=0;
+int borderVertFlip=0;
+
 int FLAG_BA  = BA_UP;
 int FLAG_AEC = AEC_RUNNING; // switced automatically by FLAG_BA
 
@@ -80,7 +83,7 @@ byte VMLI=0; // video matrix line index
 byte frame=0;
 
 void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-	x-=120;
+	//x-=120;
 	VICbgColour[0] = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
 	VICforeColour[0] = foreColor;
 	drawPixelOctet(x,y,data);
@@ -100,7 +103,7 @@ byte getYScroll() {
 }
 
 byte isDENbit() {
-	return((vicRegisters[0x11] & B4)==B4);
+	return(vicRegisters[0x11] & B5);
 }
 
 /*
@@ -158,6 +161,20 @@ word vicGetGAddress(byte rootAddress) {
 	return(gaddress);
 }
 
+
+int isYOnVerticalTopComparisonValueAndDenSet() {
+	if(currentRasterLine==0x33 && (vicRegisters[0x11] & (B5+B4))==B5+B4) return 1;
+	if(currentRasterLine==0x37 && (vicRegisters[0x11] & (B5+B4))==B5) return 1;
+	return 0;
+}
+
+int isYOnVerticalBottomComparisonValue() {
+	if(currentRasterLine==(0xfa+1) && (vicRegisters[0x11]&B4)) return 1;
+	if(currentRasterLine==(0xf6+1) && (vicRegisters[0x11]&B4)==0) return 1;
+	return 0;
+}
+
+
 void vicCycle() {
 	if(FLAG_BA==BA_UP) {
 		FLAG_AEC = AEC_RUNNING;
@@ -168,9 +185,27 @@ void vicCycle() {
 		else FLAG_AEC = AEC_DOWN;
 	}
 
+	currentXCoord += 8; // 8 pixels per cycle
+	
+	if(currentRLcycle==13) {
+		// location where X coordinate starts over, actually it's 12.5 where it's 0
+		currentXCoord = 4;
+	}
+
+	// open/close side borders (main)
+	/*     |   CSEL=0   |   CSEL=1
+         ------+------------+-----------
+         Left  |  31 ($1f)  |  24 ($18)
+         Right | 335 ($14f) | 344 ($158)	*/
+
+	// Border 1. If the X coordinate reaches the right comparison value, the main border flip flop is set.
+	if(currentXCoord==332 && (vicRegisters[0x16]&B4)==0)
+		borderMainFlip = 1;
+	if(currentXCoord==340 && (vicRegisters[0x16]&B4))
+		borderMainFlip = 1;
 
 
-	if(currentRLcycle==62) { // beginning of new line, more precis. 0x18c
+	if(currentRLcycle==62) { // beginning of new line
 		currentRLcycle=0;
 		currentRasterLine++;
 		if(currentRasterLine>=312) {
@@ -192,14 +227,49 @@ void vicCycle() {
 		}
 		// TODO: interrupt here
 		updateRasterRegister();
+
+
+		// open/close vertical border. it can be opened/closed in 2 positions, depending
+		// whether we're in 24 or 25 lines mode. 
+		// TODO: find out where exactly this decision is made
+
+		// Border 2. If the Y coordinate reaches the bottom comparison value in cycle 63, the vertical border flip flop is set.
+		if(isYOnVerticalBottomComparisonValue()) borderVertFlip = 1;
+
+		// Border 3. If the Y coordinate reaches the top comparison value in cycle 63
+		//and the DEN bit in register $d011 is set, the vertical border flip flop is reset.
+		if(isYOnVerticalTopComparisonValueAndDenSet()) borderVertFlip = 0;
+			
 	}
-
-
+	/*
+	Borders cont.
+	4. If the X coordinate reaches the left comparison value and the Y
+	   coordinate reaches the bottom one, the vertical border flip flop is set.
+	5. If the X coordinate reaches the left comparison value and the Y
+	   coordinate reaches the top one and the DEN bit in register $d011 is set,
+	   the vertical border flip flop is reset.
+	6. If the X coordinate reaches the left comparison value and the vertical
+	   border flip flop is not set, the main flip flop is reset.
+	*/
+	if((currentXCoord==20 && (vicRegisters[0x16]&B4))  ||  (currentXCoord==28 && (vicRegisters[0x16]&B4)==0)) {
+		// 4.
+		if(isYOnVerticalBottomComparisonValue()) {
+			borderVertFlip = 1;
+		}
+		// 5.
+		else if(isYOnVerticalTopComparisonValueAndDenSet()) {
+			borderVertFlip = 0;
+		}
+		// 6.
+		if(!borderVertFlip)
+			borderMainFlip=0;
+	}
 
 	// is display enabled (DEN bit)
 	if(currentRasterLine==0x30 && displayEnabled==0) {
 		displayEnabled = isDENbit();
 	}
+
 
 
 		//		 A Bad Line Condition is given at any arbitrary clock cycle, if at the
@@ -258,31 +328,32 @@ void vicCycle() {
 	// G-ACCESS
 	if(rasterline_bad[currentRLcycle][0].busUsage==RLBG) {
 		if(FLAG_STATE==STATE_DISPLAY) {
-			// TODO: get real foreColor
-			//drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemReadByte(vicGetGAddress(VML[VMLI])), colors[14]);
-			drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemRead(vicGetGAddress(VML[VMLI])), colors[(VML[VMLI]>>8) & 0xf]);
-			
+			if(!borderMainFlip)
+				drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemRead(vicGetGAddress(VML[VMLI])), colors[(VML[VMLI]>>8) & 0xf]);
+			else {
+				drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0xff, colors[vicRegisters[0x20] & 0xf]);
+			}
 			// VC and VMLI are incremented after each g-access in display state.
 			VC++;
 			VMLI++;
 		}
 		else {
-			drawCharacterOctet(currentRLcycle*8, currentRasterLine, 170, colors[14]);
+			//drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0xff, colors[vicRegisters[0x20]&0xf]);
 		}
 	}
 
+	if(borderMainFlip) {
+		drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0xff, colors[vicRegisters[0x20]&0xf]);
+	}
 
 
 	if(displayEnabled && currentRasterLine>=0x30 && currentRasterLine<=0xf7) {
 
 		// C-ACCESS
 		if(rasterline_bad[currentRLcycle][1].busUsage==RLBC && badLineCondition) {
-			//putpixel(screen, currentRLcycle*8+4, currentRasterLine, colors[5]);
 			word videomatrixaddress = vicGetCAddress();
-			//printf1("C addr = %x",videomatrixaddress);
-			word chardata = vicMemRead(videomatrixaddress); // address to font data address
-			//byte colordata = vicMemReadByte(videomatrixaddress+1) & 0b00001111;
-			VML[VMLI] = chardata; // + (colordata << 8);
+			word chardata = vicMemRead(videomatrixaddress);
+			VML[VMLI] = chardata;
 		}
 	}
 
@@ -395,9 +466,10 @@ void mainLoop() {
 
 int vicmain(void) {
 	//setupScreen(1024,768,16);
-	//setupScreen(640,480,16);
+	setupScreen(640,480,16);
 	//setupScreen(320,240,16);
-	setupScreen(400,300,16);
+	
+	//setupScreen(400,300,16); // close to "real"
 	
 	init_stdlibtools();
 	//printf("init keyboard...");

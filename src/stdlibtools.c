@@ -30,14 +30,14 @@ void outputBuffer(unsigned int len) {
 	setForeColour(0x0000); 
 	int i=0;
 	while(i<16) {
-		DrawLine(320, vpos+i, 1023, vpos+i);
+		DrawLine(520, vpos+i, 639, vpos+i);
 		i++;
 	}
 	setForeColour(0x8888);
-	DrawString(stringBuf, len, 320, vpos);
+	DrawString(stringBuf, len, 520, vpos);
 	vpos+=16;
 	//if(vpos>460) vpos=10;
-	if(vpos>250) vpos=0;
+	if(vpos>470) vpos=0;
 }
 
 // TODO: stdlib replacement stuff
