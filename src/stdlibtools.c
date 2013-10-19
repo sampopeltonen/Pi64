@@ -30,11 +30,11 @@ void outputBuffer(unsigned int len) {
 	setForeColour(0x0000); 
 	int i=0;
 	while(i<16) {
-		DrawLine(520, vpos+i, 639, vpos+i);
+		DrawLine(485-80, vpos+i, 639, vpos+i);
 		i++;
 	}
 	setForeColour(0x8888);
-	DrawString(stringBuf, len, 520, vpos);
+	DrawString(stringBuf, len, 485-80, vpos);
 	vpos+=16;
 	//if(vpos>460) vpos=10;
 	if(vpos>470) vpos=0;
