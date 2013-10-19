@@ -64,3 +64,40 @@ octloop$:
         .unreq bit
         pop {r4,r5,pc}
 
+.globl drawForeColourOctet
+drawForeColourOctet:
+        push {r4,lr}
+        px .req r0
+        py .req r1
+
+        addr .req r4
+        ldr addr,=graphicsAddress
+        ldr addr,[addr]
+
+        width .req r3
+        ldr width,[addr,#0]
+        ldr addr,[addr,#32]
+        mla px,py,width,px      ;@ px = py * width + px
+        .unreq width
+        .unreq py
+        add addr, px,lsl #1     ;@ addr = addr + px*2  I guess...
+        .unreq px
+
+        forecolor .req r3
+        bit .req r0
+        mask .req r1
+	
+	ldr forecolor,=VICforeColour
+	ldrh forecolor,[forecolor]
+        mov mask,#0b10000000
+octloop2$:
+	strh forecolor,[addr]
+        add addr, #2
+        mov mask, mask, lsr #1
+        cmp mask,#0b00000000
+        bne octloop2$
+
+        .unreq forecolor
+        .unreq addr
+        .unreq bit
+        pop {r4,pc}

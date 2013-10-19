@@ -41,6 +41,7 @@ extern uint64_t GetTimeStamp();
 extern word VICforeColour[];
 extern word VICbgColour[];
 extern void drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);  // cathoderay.s
+extern void drawForeColourOctet(unsigned int x, unsigned int y);  // cathoderay.s
 
 // controlled by DEN bit, inspected during rasterline 0x30
 int displayEnabled = 0;
@@ -52,6 +53,7 @@ unsigned int currentRLcycle = 0;   // 63 cycles per line in PAL machine (range 0
 uint32_t debugTimeMeasure = 0;
 uint32_t debugTimeMeasureCount = 0;
 
+byte vicRegisters[0x40];
 
 #define BA_UP 1
 #define BA_DOWN 0
@@ -82,15 +84,31 @@ byte VMLI=0; // video matrix line index
 
 byte frame=0;
 
-void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-	//x-=120;
-	VICbgColour[0] = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
-	VICforeColour[0] = foreColor;
-	drawPixelOctet(x,y,data);
+word interruptRasterLine=0;
+
+#define X_MIN 80
+#define X_MAX 474
+#define Y_MIN 25
+#define Y_MAX 280
+
+
+inline void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
+	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
+		VICbgColour[0] = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
+		VICforeColour[0] = foreColor;
+		drawPixelOctet(x-X_MIN,y-Y_MIN + 100,data);
+	}
+}
+
+inline void drawBorderOctet(unsigned int x, unsigned int y, unsigned int color) {
+	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
+		VICforeColour[0] = color;
+		drawForeColourOctet(x-X_MIN,y-Y_MIN + 100);
+	}
 }
 
 
-void updateRasterRegister() {
+inline void updateRasterRegister() {
 	vicRegisters[0x12] = currentRasterLine;
 	if(currentRasterLine>0xff) vicRegisters[0x11] = vicRegisters[0x11] | B8;
 	else vicRegisters[0x11] = vicRegisters[0x11] & ~B8;
@@ -98,11 +116,11 @@ void updateRasterRegister() {
 
 
 /* Returns int 000-111 ie. 0-7 */
-byte getYScroll() {
+inline byte getYScroll() {
 	return(vicRegisters[0x11] & 7); // kolme alinta bittiä
 }
 
-byte isDENbit() {
+inline byte isDENbit() {
 	return(vicRegisters[0x11] & B5);
 }
 
@@ -116,7 +134,7 @@ point to data in the color ram area starting from $d800 in the normal
 address space. The address for this color ram access is 10 lowest bits
 of the requested address.
 */
-word vicMemRead(word address) {
+inline word vicMemRead(word address) {
 
 	// TODO: resolve the bank (bits 15-16)
 	//word bit15 = 0x4000;
@@ -132,7 +150,7 @@ word vicMemRead(word address) {
 	return(memReadByte(address) + (memReadByte((address & 0b1111111111) + 0xd800)<<8 ));
 }
 
-word vicGetCAddress() {
+inline word vicGetCAddress() {
 	//	 c-access Addresses
 	//	 +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 	//	 | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
@@ -142,14 +160,10 @@ word vicGetCAddress() {
 
 	// | $d018 |VM13|VM12|VM11|VM10|CB13|CB12|CB11|  - | Memory pointers
 
-	//word tmp = ;
-	//word caddress = ((vicRegisters[0x18] & (B5+B6+B7+B8)) << 6) + VC;
-	//printf("ca=$%x ",caddress);
-	//printf("vicRegisters[0x18]=$%x VC=%d c_address=$%x\n", vicRegisters[0x18], VC, caddress);
 	return(((vicRegisters[0x18] & (B5+B6+B7+B8)) << 6) + VC);
 }
 
-word vicGetGAddress(byte rootAddress) {
+inline word vicGetGAddress(byte rootAddress) {
 	//	g-access Addresses
 	//	 +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 	//	 | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
@@ -157,18 +171,17 @@ word vicGetGAddress(byte rootAddress) {
 	//	 |CB13|CB12|CB11| D7 | D6 | D5 | D4 | D3 | D2 | D1 | D0 | RC2| RC1| RC0|
 	//	 +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 	word gaddress = ((vicRegisters[0x18] & (B2+B3+B4)) << 10) + (((word)rootAddress) << 3) + RC;
-	//printf("vicRegisters[0x18]=$%x rootAddress=%x RC=%d g_address=$%x\n", vicRegisters[0x18], rootAddress, RC, gaddress);
 	return(gaddress);
 }
 
 
-int isYOnVerticalTopComparisonValueAndDenSet() {
+inline int isYOnVerticalTopComparisonValueAndDenSet() {
 	if(currentRasterLine==0x33 && (vicRegisters[0x11] & (B5+B4))==B5+B4) return 1;
 	if(currentRasterLine==0x37 && (vicRegisters[0x11] & (B5+B4))==B5) return 1;
 	return 0;
 }
 
-int isYOnVerticalBottomComparisonValue() {
+inline int isYOnVerticalBottomComparisonValue() {
 	if(currentRasterLine==(0xfa+1) && (vicRegisters[0x11]&B4)) return 1;
 	if(currentRasterLine==(0xf6+1) && (vicRegisters[0x11]&B4)==0) return 1;
 	return 0;
@@ -199,10 +212,12 @@ void vicCycle() {
          Right | 335 ($14f) | 344 ($158)	*/
 
 	// Border 1. If the X coordinate reaches the right comparison value, the main border flip flop is set.
-	if(currentXCoord==332 && (vicRegisters[0x16]&B4)==0)
+	if(currentXCoord==332 && (vicRegisters[0x16]&B4)==0) {
 		borderMainFlip = 1;
-	if(currentXCoord==340 && (vicRegisters[0x16]&B4))
+	}
+	if(currentXCoord==340 && (vicRegisters[0x16]&B4)) {
 		borderMainFlip = 1;
+	}
 
 
 	if(currentRLcycle==62) { // beginning of new line
@@ -211,11 +226,10 @@ void vicCycle() {
 		if(currentRasterLine>=312) {
 			currentRasterLine = 0;
 			VCBASE = 0;
-			//RC = 0; // TODO: oma lisäys
-			//printf(" *VCBASE=%d ",VCBASE);
+			//RC = 0;
 		}
 
-		// lets always disable the display in the beginning of the line 0x30
+		// disable the display in the beginning of the line 0x30
 		if(currentRasterLine==0x30) {
 			if(frame++==50) {
 				frame=0;
@@ -225,13 +239,21 @@ void vicCycle() {
 			}
 			displayEnabled = 0;
 		}
-		// TODO: interrupt here
+
+		if(vicRegisters[0x1a]&B1) {
+			// rasterline interrupt enabled
+			if(interruptRasterLine==currentRasterLine) {
+				vicRegisters[0x19] |= B1;  // set rst interrupt status register
+			}
+			if(vicRegisters[0x19] & B1) {
+				// TODO: what to do to bit #8 of the interrupt status register ???
+				//printf("vic irq");
+				mos_irq();
+			}
+			
+		}
+
 		updateRasterRegister();
-
-
-		// open/close vertical border. it can be opened/closed in 2 positions, depending
-		// whether we're in 24 or 25 lines mode. 
-		// TODO: find out where exactly this decision is made
 
 		// Border 2. If the Y coordinate reaches the bottom comparison value in cycle 63, the vertical border flip flop is set.
 		if(isYOnVerticalBottomComparisonValue()) borderVertFlip = 1;
@@ -251,15 +273,15 @@ void vicCycle() {
 	6. If the X coordinate reaches the left comparison value and the vertical
 	   border flip flop is not set, the main flip flop is reset.
 	*/
+	// TODO: separate this OR
 	if((currentXCoord==20 && (vicRegisters[0x16]&B4))  ||  (currentXCoord==28 && (vicRegisters[0x16]&B4)==0)) {
+		// TODO: There's a bug in 38 col mode that borders are off by one pixel to the right.
 		// 4.
-		if(isYOnVerticalBottomComparisonValue()) {
+		if(isYOnVerticalBottomComparisonValue())
 			borderVertFlip = 1;
-		}
 		// 5.
-		else if(isYOnVerticalTopComparisonValueAndDenSet()) {
+		else if(isYOnVerticalTopComparisonValueAndDenSet())
 			borderVertFlip = 0;
-		}
 		// 6.
 		if(!borderVertFlip)
 			borderMainFlip=0;
@@ -271,79 +293,78 @@ void vicCycle() {
 	}
 
 
+	//		 A Bad Line Condition is given at any arbitrary clock cycle, if at the
+	//		 negative edge of ø0 at the beginning of the cycle RASTER >= $30 and RASTER
+	//		 <= $f7 and the lower three bits of RASTER are equal to YSCROLL and if the
+	//		 DEN bit was set during an arbitrary cycle of raster line $30.
+	//
+	//		This definition has to be taken literally. You can generate and take away a
+	//		Bad Line condition multiple times within an arbitrary raster line in the
+	//		range of $30-$f7 by modifying YSCROLL, and thus make every raster line
+	//		within the display window completely or partially a Bad Line, or trigger or
+	//		suppress all the other functions that are connected with a Bad Line
+	//		Condition. If YSCROLL=0, a Bad Line Condition occurs in raster line $30 as
+	//		soon as the DEN bit (register $d011, bit 4) is set (for more about the DEN
+	//		bit, see section 3.10.).
+	byte badLineCondition = 0;
+	if((currentRasterLine & 7)==getYScroll() && currentRasterLine>=0x30 && currentRasterLine<=0xf7 && displayEnabled) {
+		badLineCondition = 1;
 
-		//		 A Bad Line Condition is given at any arbitrary clock cycle, if at the
-		//		 negative edge of ø0 at the beginning of the cycle RASTER >= $30 and RASTER
-		//		 <= $f7 and the lower three bits of RASTER are equal to YSCROLL and if the
-		//		 DEN bit was set during an arbitrary cycle of raster line $30.
-		//
-		//		This definition has to be taken literally. You can generate and take away a
-		//		Bad Line condition multiple times within an arbitrary raster line in the
-		//		range of $30-$f7 by modifying YSCROLL, and thus make every raster line
-		//		within the display window completely or partially a Bad Line, or trigger or
-		//		suppress all the other functions that are connected with a Bad Line
-		//		Condition. If YSCROLL=0, a Bad Line Condition occurs in raster line $30 as
-		//		soon as the DEN bit (register $d011, bit 4) is set (for more about the DEN
-		//		bit, see section 3.10.).
-		byte badLineCondition = 0;
-		if((currentRasterLine & 7)==getYScroll() && currentRasterLine>=0x30 && currentRasterLine<=0xf7 && displayEnabled) {
-			badLineCondition = 1;
+		//The transition from idle to display state occurs as soon as there is a Bad
+		//Line Condition (see section 3.5.).
+		FLAG_STATE = STATE_DISPLAY;
+	}
 
-			//The transition from idle to display state occurs as soon as there is a Bad
-			//Line Condition (see section 3.5.).
-			FLAG_STATE = STATE_DISPLAY;
+
+	//	In the first phase of cycle 14 of each line, VC is loaded from VCBASE
+	//	(VCBASE->VC) and VMLI is cleared. If there is a Bad Line Condition in
+	//	this phase, RC is also reset to zero.
+	if(currentRLcycle==14) {
+		VC = VCBASE;
+		VMLI = 0;
+		if(badLineCondition) RC = 0;
+	}
+
+	//	In the first phase of cycle 58, the VIC checks if RC=7. If so, the video
+	//	   logic goes to idle state and VCBASE is loaded from VC (VC->VCBASE). If
+	//	   the video logic is in display state afterwards (this is always the case
+	//	   if there is a Bad Line Condition), RC is incremented.
+	if(currentRLcycle==58) {
+		if(RC==7) {
+			//The transition from display to idle
+			//state occurs in cycle 58 of a line if the RC (see next section) contains
+			//the value 7 and there is no Bad Line Condition.
+			if(!badLineCondition) FLAG_STATE = STATE_IDLE;
+
+			VCBASE = VC;
+			RC=0;
 		}
-
-
-		//	In the first phase of cycle 14 of each line, VC is loaded from VCBASE
-		//	(VCBASE->VC) and VMLI is cleared. If there is a Bad Line Condition in
-		//	this phase, RC is also reset to zero.
-		if(currentRLcycle==14) {
-			VC = VCBASE;
-			//printf(" VC=%d ",VC);
-			VMLI = 0;
-			if(badLineCondition) RC = 0;
-		}
-
-		//	In the first phase of cycle 58, the VIC checks if RC=7. If so, the video
-		//	   logic goes to idle state and VCBASE is loaded from VC (VC->VCBASE). If
-		//	   the video logic is in display state afterwards (this is always the case
-		//	   if there is a Bad Line Condition), RC is incremented.
-		if(currentRLcycle==58) {
-			if(RC==7) {
-				//The transition from display to idle
-				//state occurs in cycle 58 of a line if the RC (see next section) contains
-				//the value 7 and there is no Bad Line Condition.
-				if(!badLineCondition) FLAG_STATE = STATE_IDLE;
-
-				//printf("VCBASE=%d VC=%d\n", VCBASE,VC);
-				VCBASE = VC;
-				//printf(" VCBASE=%d ",VCBASE);
-				RC=0;
-			}
-			else RC++;
-		}
+		else RC++;
+	}
 
 
 	// G-ACCESS
 	if(rasterline_bad[currentRLcycle][0].busUsage==RLBG) {
 		if(FLAG_STATE==STATE_DISPLAY) {
-			if(!borderMainFlip)
-				drawCharacterOctet(currentRLcycle*8, currentRasterLine, vicMemRead(vicGetGAddress(VML[VMLI])), colors[(VML[VMLI]>>8) & 0xf]);
-			else {
-				drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0xff, colors[vicRegisters[0x20] & 0xf]);
-			}
+			if(!borderVertFlip)
+				drawCharacterOctet(currentRLcycle*8+(vicRegisters[0x16]&7), 
+							currentRasterLine, 
+							vicMemRead(vicGetGAddress(VML[VMLI])), 
+							colors[(VML[VMLI]>>8) & 0xf]);
+
 			// VC and VMLI are incremented after each g-access in display state.
 			VC++;
 			VMLI++;
 		}
-		else {
-			//drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0xff, colors[vicRegisters[0x20]&0xf]);
+		else if(!borderVertFlip) {
+			// fills the gap with bgcolor if yscrolling in 25 row mode (POKE53265,24( or 31))
+			// TODO: it seems, that in reality there should be weird black/bgcolor pattern
+			drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0x0, colors[vicRegisters[0x20] & 0xf]);
 		}
 	}
-
+		
 	if(borderMainFlip) {
-		drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0xff, colors[vicRegisters[0x20]&0xf]);
+		drawBorderOctet(currentRLcycle*8, currentRasterLine, colors[vicRegisters[0x20]&0xf]);
 	}
 
 
@@ -359,7 +380,40 @@ void vicCycle() {
 
 	currentRLcycle++;
 
+
+
 }
+
+
+void vic6569_writeByte(byte address, byte data) {
+	switch(address) {
+		case 0x11:    // screen control register #1
+			vicRegisters[address] = data;
+			interruptRasterLine = (interruptRasterLine & 0xff) + ((data << 1) & 0x100);
+			return;
+		case 0x12:    // interrupt rasterline 8 lowest bits
+			interruptRasterLine = (interruptRasterLine & 0x100) + data;
+			return;
+		case 0x19:    // interrupt status register acknowledge
+			vicRegisters[address] = ~data;
+			return;
+	}
+	vicRegisters[address] = data;
+}
+
+
+byte vic6569_readByte(byte address) {
+	//The unused addresses $2f-$3f give $ff on reading, a write access is ignored
+	switch(address) {
+		case 0x11:   // screen control register #1
+			return (vicRegisters[address] & 0x7f) + ((currentRasterLine >> 1) & 0x80);
+		case 0x12:   // current rasterline lowest 8 bits
+			return currentRasterLine & 0xff;
+	}
+	return vicRegisters[address];
+}
+
+
 
 
 word drawRGB24toRGB565(byte r, byte g, byte b) {
