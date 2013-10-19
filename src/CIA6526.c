@@ -26,6 +26,14 @@ ciaReg_s ciaReg[0x10];
 
 void doTimerCycle(cia_state* cia) {
 	if(cia->timerAControlReg & B1) {
+
+		if(cia->timerAControlReg&B5) {
+			// load latch into timer once
+			cia->timerACurrentValue = cia->timerALatchValue;
+			// TODO: is ok to clear the bit here
+			cia->timerAControlReg &=~B5;
+		}
+
 		// timer is running and counts system cycles
 		cia->timerACurrentValue--;
 		if(cia->timerACurrentValue==0xffff) {
@@ -50,6 +58,11 @@ void doTimerCycle(cia_state* cia) {
 	}
 	if(cia->timerBControlReg&B1) {
 		//TODO: cnt pin counting not implemented
+		if((cia->timerBControlReg && (B6+B7))==0) {
+			printf("should count sys cycles");
+		}
+		
+
 		if(cia->timerBControlReg&B7) {
 			// timer counts timerA underflows
 			if(cia->interruptStatus & B1) cia->timerBCurrentValue--;
