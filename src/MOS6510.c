@@ -730,8 +730,6 @@ void mneRTS(int am, int cycles) {
 	PC = stackPull() + (stackPull() << 8) + 1;
 }
 
-extern void printProcessorStatus();
-
 void mneSBC(int am, int cycles) {
         word target;
         cyc = cycles + resolveAddressModeTarget(am, &target);
@@ -781,9 +779,6 @@ void mneSBC(int am, int cycles) {
 }
 
 void mneSEC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("SEC ");
-	#endif
 	cyc = cycles;
 	setPFlag(PFLAG_CARRY);
 }
@@ -794,11 +789,8 @@ void mneSED(int am, int cycles) {
 }
 
 void mneSEI(int am, int cycles) {
-	#if DEBUG_6510
-	printf("SEI ");
-	#endif
 	cyc = cycles;
-	// there is only implied addressing mode
+	// only implied addressing mode
 	setPFlag(PFLAG_IRQ);
 }
 
@@ -1015,9 +1007,8 @@ void mneINS(int am, int cycles) {
 }
 
 void mneLAS(int am, int cycles) {
-	cyc = cycles;
 	word target;
-        resolveAddressModeTarget(am, &target);
+	cyc = cycles + resolveAddressModeTarget(am, &target);
         byte targetVal = memReadByte(target);
 	byte tmp = targetVal & S;
 	A = tmp;
@@ -1195,7 +1186,7 @@ void initMnemonicArray() {
 	i=0x02; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x03; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_X;
 	i=0x04; mneAM[i].pt2MnemonicHandler = &mneSKB; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
-	i=0x05; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 2; mneAM[i].am = ZEROPAGE;
+	i=0x05; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0x06; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
 	i=0x07; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
 	i=0x08; mneAM[i].pt2MnemonicHandler = &mnePHP; mneAM[i].cycles = 3; mneAM[i].am = IMPLIED;
@@ -1211,7 +1202,7 @@ void initMnemonicArray() {
 	i=0x12; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x13; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_Y;
 	i=0x14; mneAM[i].pt2MnemonicHandler = &mneSKB; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
-	i=0x15; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE_X;
+	i=0x15; mneAM[i].pt2MnemonicHandler = &mneORA; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0x16; mneAM[i].pt2MnemonicHandler = &mneASL; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
 	i=0x17; mneAM[i].pt2MnemonicHandler = &mneSLO; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
 	i=0x18; mneAM[i].pt2MnemonicHandler = &mneCLC; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;
@@ -1227,7 +1218,7 @@ void initMnemonicArray() {
 	i=0x22; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x23; mneAM[i].pt2MnemonicHandler = &mneRLA; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_X;
 	i=0x24; mneAM[i].pt2MnemonicHandler = &mneBIT; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
-	i=0x25; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 2; mneAM[i].am = ZEROPAGE;
+	i=0x25; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE;
 	i=0x26; mneAM[i].pt2MnemonicHandler = &mneROL; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
 	i=0x27; mneAM[i].pt2MnemonicHandler = &mneRLA; mneAM[i].cycles = 5; mneAM[i].am = ZEROPAGE;
 	i=0x28; mneAM[i].pt2MnemonicHandler = &mnePLP; mneAM[i].cycles = 4; mneAM[i].am = IMPLIED;
@@ -1243,7 +1234,7 @@ void initMnemonicArray() {
 	i=0x32; mneAM[i].pt2MnemonicHandler = &mneILL; mneAM[i].cycles = 0; mneAM[i].am = ILLEGAL;
 	i=0x33; mneAM[i].pt2MnemonicHandler = &mneRLA; mneAM[i].cycles = 8; mneAM[i].am = INDIRECT_Y;
 	i=0x34; mneAM[i].pt2MnemonicHandler = &mneSKB; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
-	i=0x35; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 3; mneAM[i].am = ZEROPAGE_X;
+	i=0x35; mneAM[i].pt2MnemonicHandler = &mneAND; mneAM[i].cycles = 4; mneAM[i].am = ZEROPAGE_X;
 	i=0x36; mneAM[i].pt2MnemonicHandler = &mneROL; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
 	i=0x37; mneAM[i].pt2MnemonicHandler = &mneRLA; mneAM[i].cycles = 6; mneAM[i].am = ZEROPAGE_X;
 	i=0x38; mneAM[i].pt2MnemonicHandler = &mneSEC; mneAM[i].cycles = 2; mneAM[i].am = IMPLIED;

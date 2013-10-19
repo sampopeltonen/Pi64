@@ -67,7 +67,7 @@ cmpiy	OK
 cmpz	OK
 cmpzx	OK
 cpuport		fail 60
-cputiming
+cputiming OK
 cpxa	OK
 cpxb	OK
 cpxz	OK
@@ -499,7 +499,8 @@ extern byte test_end[];
 extern byte rasterlinetest[];
 
 int initialized = 0;
-int testNumber=243;
+//int testNumber=243;  //rasterlinetest
+int testNumber=61;
 
 #define TESTCOUNT 245
 void* tests[TESTCOUNT];
