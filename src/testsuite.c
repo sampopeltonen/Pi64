@@ -249,6 +249,7 @@ tsxn	OK
 txan	OK
 txsn	OK
 tyan	OK	<-- #242
+rasterlinetest
 */
 
 extern byte test_adca[];
@@ -495,11 +496,12 @@ extern byte test_txan[];
 extern byte test_txsn[];
 extern byte test_tyan[];
 extern byte test_end[];
+extern byte rasterlinetest[];
 
 int initialized = 0;
-int testNumber=143;
+int testNumber=243;
 
-#define TESTCOUNT 244
+#define TESTCOUNT 245
 void* tests[TESTCOUNT];
 
 
@@ -765,6 +767,7 @@ void init() {
 	tests[i++] = test_txan;
 	tests[i++] = test_txsn;
 	tests[i++] = test_tyan;
+	tests[i++] = rasterlinetest;
 	tests[i++] = test_end;
 	
 	initialized=1;

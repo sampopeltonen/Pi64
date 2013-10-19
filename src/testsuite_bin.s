@@ -243,6 +243,7 @@ tsxn
 txan
 txsn
 tyan
+rasterlinetest
 */
 
 .globl test_adca
@@ -489,6 +490,7 @@ tyan
 .globl test_txsn
 .globl test_tyan
 .globl test_end
+.globl rasterlinetest
 
 test_adca:  .incbin "./Testsuite/adca"
 test_adcax: .incbin "./Testsuite/adcax"
@@ -733,4 +735,7 @@ test_tsxn: .incbin "./Testsuite/tsxn"
 test_txan: .incbin "./Testsuite/txan"
 test_txsn: .incbin "./Testsuite/txsn"
 test_tyan: .incbin "./Testsuite/tyan"
+
+rasterlinetest: .incbin "./test_programs/rasterlinetest"
+
 test_end: .byte 00
