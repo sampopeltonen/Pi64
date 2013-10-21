@@ -28,6 +28,10 @@
 #define PIX_PER_LINE 504
 #define VISIBLE_PIX_PER_LINE 403
 
+
+extern uint32_t* graphicsAddress;
+
+
 extern byte kernalROM[];
 extern byte basicROM[];
 extern byte characterROM[];
@@ -38,10 +42,13 @@ extern void ledOn();
 extern uint64_t GetTimeStamp();
 //extern void setForeColour (unsigned int);
 //extern void setBgColour (unsigned int);
-extern word VICforeColour[];
-extern word VICbgColour[];
+extern word VICforeColor[];
+extern word VICbgColor0[];
+extern word VICbgColor1[];
+extern word VICbgColor2[];
+extern word VICbgColor3[];
 extern void drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);  // cathoderay.s
-extern void drawForeColourOctet(unsigned int x, unsigned int y);  // cathoderay.s
+extern void drawForeColorOctet(unsigned int x, unsigned int y);  // cathoderay.s
 
 // controlled by DEN bit, inspected during rasterline 0x30
 int displayEnabled = 0;
@@ -91,21 +98,95 @@ word interruptRasterLine=0;
 #define Y_MIN 25
 #define Y_MAX 280
 
+// Valid graphics modes (value from bits ECM BMM MCM)
+#define GM_STM 0
+#define GM_MTM 1
+#define GM_SBM 2
+#define GM_MBM 3
+#define GM_ETM 4
 
-inline void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
+byte graphicsMode = 0;
+
+
+/* TODO: move this framebuffer stuff to it's own file */
+
+uint32_t gwidth;
+uint16_t* gaddress;
+
+// for some reason emulation almost 10% slower in this function is inlined, why?
+//void drawPixelOctetC(uint32_t x, uint32_t y, byte data) {
+void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
 	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-		VICbgColour[0] = colors[(vicRegisters[0x21] & (B1+B2+B3+B4))];
-		VICforeColour[0] = foreColor;
-		drawPixelOctet(x-X_MIN,y-Y_MIN + 100,data);
+                VICforeColor[0] = foreColor;
+		x-=X_MIN;
+		y=y-Y_MIN+100;
+
+		uint16_t* address = gaddress + (y*gwidth+x);
+		byte mask = 0b10000000;
+		while(mask>0) {
+			*address = (data&mask) ? *VICforeColor : *VICbgColor0;
+			address += 1;
+			mask = (mask >>1);
+		}
 	}
 }
+
+void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
+        if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
+                VICforeColor[0] = foreColor;
+                x-=X_MIN;
+                y=y-Y_MIN+100;
+
+                uint16_t* address = gaddress + (y*gwidth+x);
+                byte mask = 0b11000000;
+		int i;
+		for(i=4; i>0; i--) {
+			switch(data&mask) {
+				case 0:
+					*(address++) = *VICbgColor0;
+					*(address++) = *VICbgColor0;
+					break;
+				case 64:
+					*(address++) = *VICbgColor1;
+					*(address++) = *VICbgColor1;
+					break;
+				case 128:
+					*(address++) = *VICbgColor2;
+					*(address++) = *VICbgColor2;
+					break;
+				case 192:
+					*(address++) = foreColor;
+					*(address++) = foreColor;
+					break;
+			}
+			data = data<<2;
+		}
+	}
+}
+
+
+
+/*
+inline void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
+	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
+		VICforeColor[0] = foreColor;
+		//drawPixelOctet(x-X_MIN,y-Y_MIN + 100,data);
+		drawPixelOctetC(x-X_MIN,y-Y_MIN + 100,data);
+	}
+}*/
 
 inline void drawBorderOctet(unsigned int x, unsigned int y, unsigned int color) {
 	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-		VICforeColour[0] = color;
-		drawForeColourOctet(x-X_MIN,y-Y_MIN + 100);
+		VICforeColor[0] = color;
+		drawForeColorOctet(x-X_MIN,y-Y_MIN + 100);
 	}
 }
+
+/* end framebuffer stuff */
+
+
+
+
 
 
 inline void updateRasterRegister() {
@@ -220,8 +301,8 @@ void vicCycle() {
 	}
 
 
-	if(currentRLcycle==62) { // beginning of new line
-		currentRLcycle=0;
+	if(currentRLcycle==0) { // beginning of new line
+		//currentRLcycle=0;
 		currentRasterLine++;
 		if(currentRasterLine>=312) {
 			currentRasterLine = 0;
@@ -233,7 +314,7 @@ void vicCycle() {
 		if(currentRasterLine==0x30) {
 			if(frame++==50) {
 				frame=0;
-				//printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
+				printf2("50 frms avg = %d/%d us/cycle", debugTimeMeasure, debugTimeMeasureCount);
 				debugTimeMeasure=0;
 				debugTimeMeasureCount=0;
 			}
@@ -273,7 +354,6 @@ void vicCycle() {
 	6. If the X coordinate reaches the left comparison value and the vertical
 	   border flip flop is not set, the main flip flop is reset.
 	*/
-	// TODO: separate this OR
 	if((currentXCoord==20 && (vicRegisters[0x16]&B4))  ||  (currentXCoord==28 && (vicRegisters[0x16]&B4)==0)) {
 		// TODO: There's a bug in 38 col mode that borders are off by one pixel to the right.
 		// 4.
@@ -319,7 +399,7 @@ void vicCycle() {
 	//	In the first phase of cycle 14 of each line, VC is loaded from VCBASE
 	//	(VCBASE->VC) and VMLI is cleared. If there is a Bad Line Condition in
 	//	this phase, RC is also reset to zero.
-	if(currentRLcycle==14) {
+	if(currentRLcycle==13) {
 		VC = VCBASE;
 		VMLI = 0;
 		if(badLineCondition) RC = 0;
@@ -329,7 +409,7 @@ void vicCycle() {
 	//	   logic goes to idle state and VCBASE is loaded from VC (VC->VCBASE). If
 	//	   the video logic is in display state afterwards (this is always the case
 	//	   if there is a Bad Line Condition), RC is incremented.
-	if(currentRLcycle==58) {
+	if(currentRLcycle==57) {
 		if(RC==7) {
 			//The transition from display to idle
 			//state occurs in cycle 58 of a line if the RC (see next section) contains
@@ -346,12 +426,30 @@ void vicCycle() {
 	// G-ACCESS
 	if(rasterline_bad[currentRLcycle][0].busUsage==RLBG) {
 		if(FLAG_STATE==STATE_DISPLAY) {
-			if(!borderVertFlip)
-				drawCharacterOctet(currentRLcycle*8+(vicRegisters[0x16]&7), 
-							currentRasterLine, 
-							vicMemRead(vicGetGAddress(VML[VMLI])), 
-							colors[(VML[VMLI]>>8) & 0xf]);
+			if(!borderVertFlip) {
+				switch(graphicsMode) {
+					case GM_MTM:
+						// Multicolor Text Mode 0/0/1
+						if(VML[VMLI] & 0b100000000000) {
+							// TODO: implemented mode with MC flag == 1 
+							drawCharacterOctetMTM(currentRLcycle*8+(vicRegisters[0x16]&7),
+                                                                        currentRasterLine,
+                                                                        vicMemRead(vicGetGAddress(VML[VMLI])),
+                                                                        colors[(VML[VMLI]>>8) & 0x7]);
+							break;
+						}
+						// else fall through to STM mode below
+					case GM_STM:
+						// Standard Text Mode 0/0/0
+						drawCharacterOctet(currentRLcycle*8+(vicRegisters[0x16]&7), 
+									currentRasterLine, 
+									vicMemRead(vicGetGAddress(VML[VMLI])), 
+									colors[(VML[VMLI]>>8) & 0xf]);
+						break;
+			
 
+				}
+			}
 			// VC and VMLI are incremented after each g-access in display state.
 			VC++;
 			VMLI++;
@@ -379,9 +477,7 @@ void vicCycle() {
 	}
 
 	currentRLcycle++;
-
-
-
+	if(currentRLcycle==63) currentRLcycle=0;
 }
 
 
@@ -390,13 +486,31 @@ void vic6569_writeByte(byte address, byte data) {
 		case 0x11:    // screen control register #1
 			vicRegisters[address] = data;
 			interruptRasterLine = (interruptRasterLine & 0xff) + ((data << 1) & 0x100);
+			if (data&B6) graphicsMode |= B2; else graphicsMode &= B2;  // BMM
+			if (data&B7) graphicsMode |= B3; else graphicsMode &= ~B3;  // ECM
 			return;
 		case 0x12:    // interrupt rasterline 8 lowest bits
 			interruptRasterLine = (interruptRasterLine & 0x100) + data;
 			return;
+		case 0x16:    // screen control register #2
+			if (data&B5) graphicsMode |= B1; else graphicsMode &= ~B1;    //MCM
+			break;
 		case 0x19:    // interrupt status register acknowledge
 			vicRegisters[address] = ~data;
 			return;
+		case 0x21:
+			*VICbgColor0 = colors[data & (B1+B2+B3+B4)];
+			break;
+		case 0x22:
+			*VICbgColor1 = colors[data & (B1+B2+B3+B4)];
+			break;
+		case 0x23:
+			*VICbgColor2 = colors[data & (B1+B2+B3+B4)];
+			break;
+		case 0x24:
+			*VICbgColor3 = colors[data & (B1+B2+B3+B4)];
+			break;
+
 	}
 	vicRegisters[address] = data;
 }
@@ -421,6 +535,10 @@ word drawRGB24toRGB565(byte r, byte g, byte b) {
 }
 
 void vic6569_init() {
+
+        gwidth = graphicsAddress[0];
+        gaddress = (uint16_t*)graphicsAddress[8];
+
 	int i;
 	for(i=0; i<47; i++) {
 		// TODO: what are the real initial values?
