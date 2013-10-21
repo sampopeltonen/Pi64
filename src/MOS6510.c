@@ -55,6 +55,7 @@ int cyc = 0;
 
 int irqLineUp;
 int nmiLineUp;
+int interruptDelayed=0;
 
 int yesDump;
 
@@ -109,7 +110,7 @@ int resolveAddressModeTarget(int am, word *targetAddress) {
 			*targetAddress = A;
 			break;
 		case IMMEDIATE:
-			*targetAddress = PC++; // inc counter manually
+			*targetAddress = PC++;
 			break;
 		case ZEROPAGE:
 			oper1 = readMemoryPC();
@@ -213,9 +214,6 @@ void mneADC(int am, int cycles) {
 }
 
 void mneAND(int am, int cycles) {
-	#if DEBUG_6510
-	printf("AND ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	A = A & memReadByte(target);
@@ -223,9 +221,6 @@ void mneAND(int am, int cycles) {
 }
 
 void mneASL(int am, int cycles) {
-	#if DEBUG_6510
-	printf("ASL ");
-	#endif
 	cyc = cycles;
 	word target;
 	if(am == ACCUMULATOR) {
@@ -255,9 +250,6 @@ void mneBCC(int am, int cycles) {
 }
 
 void mneBCS(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BCS ");
-	#endif
 	cyc = cycles;
 	sbyte offset = (sbyte) readMemoryPC();
 	if((P & PFLAG_CARRY)== PFLAG_CARRY) {
@@ -265,16 +257,10 @@ void mneBCS(int am, int cycles) {
 		word newLoc = PC + offset;
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
-		#if DEBUG_6510
-		printf("jumped to %X (offset %d) ",PC,offset);
-		#endif
 	}
 }
 
 void mneBEQ(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BEQ ");
-	#endif
 	cyc = cycles;
 	sbyte offset = (sbyte) readMemoryPC();
 	if((P & PFLAG_ZERO)== PFLAG_ZERO) {
@@ -282,16 +268,10 @@ void mneBEQ(int am, int cycles) {
 		word newLoc = PC + offset;
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
-		#if DEBUG_6510
-		printf("jumped to %X (offset %d) ",PC,offset);
-		#endif
 	}
 }
 
 void mneBIT(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BIT ");
-	#endif
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
@@ -303,9 +283,6 @@ void mneBIT(int am, int cycles) {
 }
 
 void mneBMI(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BMI ");
-	#endif
 	cyc = cycles;
 	sbyte offset = (sbyte) readMemoryPC();
 	if((P & PFLAG_NEGATIVE)== PFLAG_NEGATIVE) {
@@ -313,61 +290,28 @@ void mneBMI(int am, int cycles) {
 		word newLoc = PC + offset;
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
-		#if DEBUG_6510
-		printf("jumped to %X (offset %d) ",PC,offset);
-		#endif
 	}
 }
 
 void mneBNE(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BNE ");
-	#endif
-	//if(am!=RELATIVE) { printf("BNE am %d illegal.\n",am); exit(1); }
 	cyc = cycles;
 	sbyte offset = readMemoryPC();
 	if((PFLAG_ZERO & P)==0) {
-		#if DEBUG_6510
-		printf("P.Z==0: jumping with offset %d, ",offset);
-		#endif
 		cyc++;
 		word newLoc = PC + offset;
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
-		#if DEBUG_6510
-		printf("PC new loc=%X",PC);
-		#endif
 	}
-	#if DEBUG_6510
-	else {
-		printf("P.Z==1. NO jump to loc %X ", (PC+offset));
-	}
-	#endif
 }
 
 void mneBPL(int am, int cycles) {
-	#if DEBUG_6510
-	printf("BPL ");
-	#endif
 	cyc = cycles;
-	// TODO: move inside if
 	sbyte offset = readMemoryPC();
 	if((PFLAG_NEGATIVE & P)==0) {
-		#if DEBUG_6510
-		printf("jumping with offset %d, ",offset);
-		#endif
 		cyc++;
 		word newLoc = PC + offset;
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
-		#if DEBUG_6510
-		printf("PC new loc=%X",PC);
-		#endif
-	}
-	else {
-		if(PC>0xeac4 && PC<0xeacd) {
-			printf("BPL NOT jumping over STY $CB");
-		}
 	}
 }
 
@@ -398,12 +342,9 @@ void mneBVS(int am, int cycles) {
 	if((P & PFLAG_OVERFLOW)== PFLAG_OVERFLOW) {
 		cyc++;
 		word newLoc = PC + offset;
-		
-		// TODO: check all the b** commands if they really can take 1-2 additional cycles...!?
 		if((newLoc >> 8) != (PC >> 8)) cyc++; // is page crossed?
 		PC = newLoc;
 	}
-	//printf1("BVS not implemented. PC=%x",PC); exit(1);
 }
 
 void mneCLC(int am, int cycles) {
@@ -437,15 +378,9 @@ void mneCMP(int am, int cycles) {
 }
 
 void mneCPX(int am, int cycles) {
-	#if DEBUG_6510
-	printf1("CPX am=%d, ",am);
-	#endif
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
-	#if DEBUG_6510
-	printf("vrt X-M %X-%X ",X, memReadByte(target));
-	#endif
 	byte value = memReadByte(target);
 	byte tmp = X - value;
 	setZeroAndNegativePFlags(&tmp);
@@ -454,15 +389,9 @@ void mneCPX(int am, int cycles) {
 }
 
 void mneCPY(int am, int cycles) {
-	#if DEBUG_6510
-	printf("CPY am=%d, ",am);
-	#endif
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
-	#if DEBUG_6510
-	printf("vrt Y-M %X-%X ",Y, memReadByte(target));
-	#endif
 	byte value = memReadByte(target);
         byte tmp = Y - value;
         setZeroAndNegativePFlags(&tmp);
@@ -471,9 +400,6 @@ void mneCPY(int am, int cycles) {
 }
 
 void mneDEC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("DEC ");
-	#endif
 	word target;
 	cyc = cycles;
 	resolveAddressModeTarget(am, &target);
@@ -484,27 +410,18 @@ void mneDEC(int am, int cycles) {
 }
 
 void mneDEX(int am, int cycles) {
-	#if DEBUG_6510
-	printf("DEX ");
-	#endif
 	cyc = cycles;
 	X--;
 	setZeroAndNegativePFlags(&X);
 }
 
 void mneDEY(int am, int cycles) {
-	#if DEBUG_6510
-	printf("DEY ");
-	#endif
 	cyc = cycles;
 	Y--;
 	setZeroAndNegativePFlags(&Y);
 }
 
 void mneEOR(int am, int cycles) {
-	#if DEBUG_6510
-	printf("EOR ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	A = A ^ memReadByte(target);
@@ -512,9 +429,6 @@ void mneEOR(int am, int cycles) {
 }
 
 void mneINC(int am, int cycles) {
-	#if DEBUG_6510
-	printf("INC ");
-	#endif
 	cyc = cycles;
 	word target;
 	resolveAddressModeTarget(am, &target);
@@ -524,18 +438,12 @@ void mneINC(int am, int cycles) {
 }
 
 void mneINX(int am, int cycles) {
-	#if DEBUG_6510
-	printf("INX ");
-	#endif
 	cyc = cycles;
 	X++;
 	setZeroAndNegativePFlags(&X);
 }
 
 void mneINY(int am, int cycles) {
-	#if DEBUG_6510
-	printf("INY ");
-	#endif
 	cyc = cycles;
 	Y++;
 	setZeroAndNegativePFlags(&Y);
@@ -562,43 +470,24 @@ void mneJMP(int am, int cycles) {
 }
 
 void mneJSR(int am, int cycles) {
-	#if DEBUG_6510
-	printf("JSR ");
-	#endif
+	// there's only ABSOLUTE adressing mode
 	cyc = cycles;
 	word tmpW;
-	if(am==ABSOLUTE) {
-		tmpW = readMemoryPC() + (readMemoryPC() << 8);
-		stackPush((PC-1) >> 8);
-		stackPush(PC-1);
-		PC = tmpW;
-		#if DEBUG_6510
-		printf("jumped to %X ",PC);
-		#endif
-	}
-	else {
-		printf1("JSR addressing mode not implemented: %d\n", am); exit(1);
-	}
+	tmpW = readMemoryPC() + (readMemoryPC() << 8);
+	stackPush((PC-1) >> 8);
+	stackPush(PC-1);
+	PC = tmpW;
 }
 
 // http://www.obelisk.demon.co.uk/6502/reference.html#LDA
 void mneLDA(int am, int cycles) {
-	#if DEBUG_6510
-	printf("LDA ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	A = memReadByte(target);
-	#if DEBUG_6510
-	printf("A=%X ", A);
-	#endif
 	setZeroAndNegativePFlags(&A);
 }
 
 void mneLDX(int am, int cycles) {
-	#if DEBUG_6510
-	printf("LDX ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	X = memReadByte(target);
@@ -606,9 +495,6 @@ void mneLDX(int am, int cycles) {
 }
 
 void mneLDY(int am, int cycles) {
-	#if DEBUG_6510
-	printf("LDY ");
-	#endif
 	word target;
 	cyc = cycles + resolveAddressModeTarget(am, &target);
 	Y = memReadByte(target);
@@ -746,7 +632,7 @@ void mneSBC(int am, int cycles) {
 		A=99
 		src=88
 		temppu = 99-88-1 = 10
-		Tests (sbc*) claim V should be set 
+		Tests (sbc*) says V should be set 
 		*/
 		//(((AAA^temppu) & 0x80) && ((AAA^src) & 0x80)) ? setPFlag(PFLAG_OVERFLOW) : clearPFlag(PFLAG_OVERFLOW);
 		targetValue = ~targetValue;
@@ -790,7 +676,6 @@ void mneSED(int am, int cycles) {
 
 void mneSEI(int am, int cycles) {
 	cyc = cycles;
-	// only implied addressing mode
 	setPFlag(PFLAG_IRQ);
 }
 
@@ -841,13 +726,7 @@ void mneTXA(int am, int cycles) {
 
 void mneTXS(int am, int cycles) {
 	cyc = cycles;
-	if(am==IMPLIED) {
-		S=X;
-	}
-	else {
-		printf1("TXS addressing mode not implemented: %d\n", am);
-		exit(1);
-	}
+	S=X;
 }
 
 void mneTYA(int am, int cycles) {
@@ -1441,14 +1320,21 @@ void initMnemonicArray() {
 }
 
 void mos_irq() {
+	// irq must occur before the last cycle of the ongoing instruction for it to be processed before next instruction
 	irqLineUp=1;
+	// TODO: investigate and confirm how this interrupt delaying actually should go
+	if(cyc<=2) {
+		interruptDelayed=2;
+	}
 }
 
 void mos_nmi() {
 	// TODO: remember NMI writes 0 break flag to stack
 	printf("NMI");
 	nmiLineUp=1;
-	exit(1);
+	if(cyc<=2) {
+		interruptDelayed=2;
+	}
 }
 
 void initRegisters() {
@@ -1478,16 +1364,29 @@ void mos6510_cycle() {
 	if(cyc--<=0) {
 
 		// interrupts are handled
-		if(irqLineUp) {
+		if(irqLineUp && !interruptDelayed) {
 			if(!(P & PFLAG_IRQ)) {
 				stackPush(PC >> 8);
 				stackPush(PC);
-				//printf1("IRQ pushed PC %x to stack",PC);
 				stackPush(P&~PFLAG_BREAK);
 				PC = memReadWord(0xfffe);
+				// interrupt sequence takes 7 clock cycles
+				cyc = 7;
+				irqLineUp=0;
+				return;
 				//TODO: IRQ and BRK both set the I flag, whereas the NMI does not affect its state.
 			}
 			irqLineUp=0;
+		}
+		if(nmiLineUp && !interruptDelayed) {
+			stackPush(PC >> 8);
+			stackPush(PC);
+			stackPush(P&~PFLAG_BREAK);
+			PC = memReadWord(0xfffa);
+			// interrupt sequence takes 7 clock cycles
+			cyc = 7;
+			//TODO: IRQ and BRK both set the I flag, whereas the NMI does not affect its state.
+			nmiLineUp=0;
 		}
 	
 		////// breakpoint debugging  //////
@@ -1531,6 +1430,7 @@ void mos6510_cycle() {
 		mneAM[opCode].pt2MnemonicHandler(mneAM[opCode].am, mneAM[opCode].cycles);
 		cyc--;
 	}
+	if(interruptDelayed) interruptDelayed--;
 }
 
 
