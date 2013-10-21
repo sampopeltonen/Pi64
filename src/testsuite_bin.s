@@ -491,6 +491,7 @@ rasterlinetest
 .globl test_tyan
 .globl test_end
 .globl rasterlinetest
+.globl mctm
 
 test_adca:  .incbin "./Testsuite/adca"
 test_adcax: .incbin "./Testsuite/adcax"
@@ -737,5 +738,6 @@ test_txsn: .incbin "./Testsuite/txsn"
 test_tyan: .incbin "./Testsuite/tyan"
 
 rasterlinetest: .incbin "./test_programs/rasterlinetest"
+mctm: .incbin "./test_programs/mctm"
 
 test_end: .byte 00
