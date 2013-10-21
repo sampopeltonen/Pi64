@@ -4,19 +4,31 @@
 */
 .section .data
 .align 1
-.globl VICforeColour
-VICforeColour:
+.globl VICforeColor
+VICforeColor:
         .hword 0x0
 
-.globl VICbgColour
-VICbgColour:
+.globl VICbgColor0
+VICbgColor0:
+        .hword 0x0
+
+.globl VICbgColor1
+VICbgColor1:
+        .hword 0x0
+
+.globl VICbgColor2
+VICbgColor2:
+        .hword 0x0
+
+.globl VICbgColor3
+VICbgColor3:
         .hword 0x0
 
 .section .text
 
 /* 
-* Draws VIC octet (8 pixels) to current beam position
-* using foreColour and bgColour and advances beam position.
+* Draws 8 pixels to specified position
+* using foreColor and bgColour
 */
 .globl drawPixelOctet
 drawPixelOctet:
@@ -43,9 +55,9 @@ drawPixelOctet:
         mask .req r1
 	bgcolor .req r5
 	
-	ldr forecolor,=VICforeColour
+	ldr forecolor,=VICforeColor
 	ldrh forecolor,[forecolor]
-	ldr bgcolor,=VICbgColour
+	ldr bgcolor,=VICbgColor0
 	ldrh bgcolor,[bgcolor]
         mov mask,#0b10000000
 octloop$:
@@ -64,8 +76,10 @@ octloop$:
         .unreq bit
         pop {r4,r5,pc}
 
-.globl drawForeColourOctet
-drawForeColourOctet:
+
+
+.globl drawForeColorOctet
+drawForeColorOctet:
         push {r4,lr}
         px .req r0
         py .req r1
@@ -87,7 +101,7 @@ drawForeColourOctet:
         bit .req r0
         mask .req r1
 	
-	ldr forecolor,=VICforeColour
+	ldr forecolor,=VICforeColor
 	ldrh forecolor,[forecolor]
         mov mask,#0b10000000
 octloop2$:
