@@ -165,6 +165,21 @@ void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned i
 }
 
 
+void drawCharacterOctetSBM(unsigned int x, unsigned int y, byte data, unsigned int color0, unsigned int color1) {
+	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
+                //VICforeColor[0] = color0;
+		x-=X_MIN;
+		y=y-Y_MIN+100;
+
+		uint16_t* address = gaddress + (y*gwidth+x);
+		byte mask = 0b10000000;
+		while(mask>0) {
+			*address = (data&mask) ? color1 : color0;
+			address += 1;
+			mask = (mask >>1);
+		}
+	}
+}
 
 /*
 inline void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
@@ -215,7 +230,7 @@ point to data in the color ram area starting from $d800 in the normal
 address space. The address for this color ram access is 10 lowest bits
 of the requested address.
 */
-inline word vicMemRead(word address) {
+inline word vicMemReadCAccess(word address) {
 
 	// TODO: resolve the bank (bits 15-16)
 	//word bit15 = 0x4000;
@@ -229,6 +244,21 @@ inline word vicMemRead(word address) {
 	}
 	// read normally + highest bits from color ram
 	return(memReadByte(address) + (memReadByte((address & 0b1111111111) + 0xd800)<<8 ));
+}
+inline byte vicMemRead(word address) {
+
+	// TODO: resolve the bank (bits 15-16)
+	//word bit15 = 0x4000;
+	//word bit16 = 0x8000;
+
+	// TODO: char rom should only visible in banks 0 and 2
+	if(address>=0x1000 && address<0x2000) {
+		byte ret = characterROM[address-0x1000];
+		// TODO: figure out should the color ram also be accessed here?
+		return(ret);
+	}
+	// read normally + highest bits from color ram
+	return(memReadByte(address));
 }
 
 inline word vicGetCAddress() {
@@ -255,6 +285,16 @@ inline word vicGetGAddress(byte rootAddress) {
 	return(gaddress);
 }
 
+inline word vicGetGAddressSBM() {
+	//	g-access Addresses
+	//	+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+	//	| 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+	//	+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+	//	|CB13| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0| RC2| RC1| RC0|
+	//	+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+	word gaddress = ((vicRegisters[0x18] & (B4)) << 10) + (VC << 3) + RC;
+	return(gaddress);
+}
 
 inline int isYOnVerticalTopComparisonValueAndDenSet() {
 	if(currentRasterLine==0x33 && (vicRegisters[0x11] & (B5+B4))==B5+B4) return 1;
@@ -431,7 +471,6 @@ void vicCycle() {
 					case GM_MTM:
 						// Multicolor Text Mode 0/0/1
 						if(VML[VMLI] & 0b100000000000) {
-							// TODO: implemented mode with MC flag == 1 
 							drawCharacterOctetMTM(currentRLcycle*8+(vicRegisters[0x16]&7),
                                                                         currentRasterLine,
                                                                         vicMemRead(vicGetGAddress(VML[VMLI])),
@@ -445,6 +484,13 @@ void vicCycle() {
 									currentRasterLine, 
 									vicMemRead(vicGetGAddress(VML[VMLI])), 
 									colors[(VML[VMLI]>>8) & 0xf]);
+						break;
+					case GM_SBM:
+						// Standard Bitmap Mode 0/1/0
+						drawCharacterOctetSBM(currentRLcycle*8+(vicRegisters[0x16]&7), 
+									currentRasterLine, 
+									vicMemRead(vicGetGAddressSBM()), 
+									colors[(VML[VMLI]) & 0xf], colors[(VML[VMLI]>>4) & 0xf]);
 						break;
 			
 
@@ -471,7 +517,7 @@ void vicCycle() {
 		// C-ACCESS
 		if(rasterline_bad[currentRLcycle][1].busUsage==RLBC && badLineCondition) {
 			word videomatrixaddress = vicGetCAddress();
-			word chardata = vicMemRead(videomatrixaddress);
+			word chardata = vicMemReadCAccess(videomatrixaddress);
 			VML[VMLI] = chardata;
 		}
 	}
@@ -486,7 +532,7 @@ void vic6569_writeByte(byte address, byte data) {
 		case 0x11:    // screen control register #1
 			vicRegisters[address] = data;
 			interruptRasterLine = (interruptRasterLine & 0xff) + ((data << 1) & 0x100);
-			if (data&B6) graphicsMode |= B2; else graphicsMode &= B2;  // BMM
+			if (data&B6) graphicsMode |= B2; else graphicsMode &= ~B2;  // BMM
 			if (data&B7) graphicsMode |= B3; else graphicsMode &= ~B3;  // ECM
 			return;
 		case 0x12:    // interrupt rasterline 8 lowest bits
