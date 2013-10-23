@@ -20,7 +20,7 @@ arm-none-eabi-gcc $CC_OPTS -c src/mmu_init.c -o obj/mmu_init.o
 
 # 64 stuff
 arm-none-eabi-gcc $CC_OPTS -c src/CIA6526.c -o obj/CIA6526.o
-arm-none-eabi-gcc $CC_OPTS -Wno-char-subscripts -c src/autotestkeyboard.c -o obj/autotestkeyboard.o
+#arm-none-eabi-gcc $CC_OPTS -Wno-char-subscripts -c src/autotestkeyboard.c -o obj/autotestkeyboard.o
 arm-none-eabi-gcc $CC_OPTS -c src/ioregarea.c -o obj/ioregarea.o
 arm-none-eabi-gcc $CC_OPTS -c src/ram.c -o obj/ram.o
 arm-none-eabi-gcc $CC_OPTS -c src/MOS6510.c -o obj/MOS6510.o
@@ -30,7 +30,7 @@ arm-none-eabi-gcc $CC_OPTS -c src/VIC6569.c -o obj/VIC6569.o
 arm-none-eabi-gcc $CC_OPTS -c src/stdlibtools.c -o obj/stdlibtools.o
 arm-none-eabi-gcc $CC_OPTS -c src/C64Keyboard.c -o obj/C64Keyboard.o
 arm-none-eabi-as src/roms.s -o obj/roms.o    # C64 rom images
-arm-none-eabi-as src/cathoderay.s -o obj/cathoderay.o
+#arm-none-eabi-as src/cathoderay.s -o obj/cathoderay.o
 arm-none-eabi-as src/C64KeyboardPins.s -o obj/C64KeyboardPins.o
 arm-none-eabi-as src/testsuite_bin.s -o obj/testsuite_bin.o
 arm-none-eabi-gcc $CC_OPTS -c src/testsuite.c -o obj/testsuite.o
@@ -41,12 +41,10 @@ arm-none-eabi-ld -T lscript obj/bootstrap.o \
 obj/gpio.o obj/mailbox.o obj/frameBuffer.o obj/drawing.o obj/maths.o obj/text.o obj/systemTimer.o \
 obj/mmu_init.o \
 obj/CIA6526.o \
-obj/autotestkeyboard.o \
 obj/ioregarea.o \
 obj/ram.o \
 obj/MOS6510.o \
 obj/rasterlinetiming.o \
-obj/cathoderay.o \
 obj/VIC6569.o \
 obj/stdlibtools.o \
 obj/C64KeyboardPins.o \

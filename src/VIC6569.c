@@ -8,29 +8,15 @@
  ============================================================================
  */
 
-//#include <stdio.h>
-//#include <SDL/SDL.h>
 #include "MOS6510.h"
 #include "ram.h"
-//#include "rom.h"
 #include "VIC6569.h"
 #include "ioregarea.h"
 #include "rasterlinetiming.h"
 #include "stdlibtools.h"
 #include "C64Keyboard.h"
-//#include "usbkeyboard.h"
-//#include "monitor.h"
-//#include "testsuite.h"
-
-// pal specific stuff
-#define RASTER_LINES 312
-#define VISIBLE_LINES 284
-#define PIX_PER_LINE 504
-#define VISIBLE_PIX_PER_LINE 403
-
 
 extern uint32_t* graphicsAddress;
-
 
 extern byte kernalROM[];
 extern byte basicROM[];
@@ -40,22 +26,16 @@ extern void setupScreen(unsigned int, unsigned int, unsigned int);
 extern void Wait(unsigned int);
 extern void ledOn();
 extern uint64_t GetTimeStamp();
-//extern void setForeColour (unsigned int);
-//extern void setBgColour (unsigned int);
-extern word VICforeColor[];
-extern word VICbgColor0[];
-extern word VICbgColor1[];
-extern word VICbgColor2[];
-extern word VICbgColor3[];
-extern void drawPixelOctet(unsigned int x, unsigned int y, unsigned int octet);  // cathoderay.s
-extern void drawForeColorOctet(unsigned int x, unsigned int y);  // cathoderay.s
 
-// controlled by DEN bit, inspected during rasterline 0x30
-int displayEnabled = 0;
+unsigned int displayEnabled = 0;
+
+unsigned int outputting;
 
 unsigned int currentRasterLine = 0;
 unsigned int currentXCoord = 0;
 unsigned int currentRLcycle = 0;   // 63 cycles per line in PAL machine (range 0-62)
+unsigned int currentYScroll = 0;
+unsigned int currentXScroll = 0;
 
 uint32_t debugTimeMeasure = 0;
 uint32_t debugTimeMeasureCount = 0;
@@ -93,6 +73,11 @@ byte frame=0;
 
 word interruptRasterLine=0;
 
+word VICbgColor0;
+word VICbgColor1;
+word VICbgColor2;
+word VICbgColor3;
+
 #define X_MIN 80
 #define X_MAX 474
 #define Y_MIN 25
@@ -114,17 +99,15 @@ uint32_t gwidth;
 uint16_t* gaddress;
 
 // for some reason emulation almost 10% slower in this function is inlined, why?
-//void drawPixelOctetC(uint32_t x, uint32_t y, byte data) {
 void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-                VICforeColor[0] = foreColor;
+	if(y>=Y_MIN && y<Y_MAX) {
 		x-=X_MIN;
 		y=y-Y_MIN+100;
 
 		uint16_t* address = gaddress + (y*gwidth+x);
 		byte mask = 0b10000000;
 		while(mask>0) {
-			*address = (data&mask) ? *VICforeColor : *VICbgColor0;
+			*address = (data&mask) ? foreColor : VICbgColor0;
 			address += 1;
 			mask = (mask >>1);
 		}
@@ -132,8 +115,7 @@ void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int 
 }
 
 void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-        if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-                VICforeColor[0] = foreColor;
+        if(y>=Y_MIN && y<Y_MAX) {
                 x-=X_MIN;
                 y=y-Y_MIN+100;
 
@@ -143,16 +125,16 @@ void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned i
 		for(i=4; i>0; i--) {
 			switch(data&mask) {
 				case 0:
-					*(address++) = *VICbgColor0;
-					*(address++) = *VICbgColor0;
+					*(address++) = VICbgColor0;
+					*(address++) = VICbgColor0;
 					break;
 				case 64:
-					*(address++) = *VICbgColor1;
-					*(address++) = *VICbgColor1;
+					*(address++) = VICbgColor1;
+					*(address++) = VICbgColor1;
 					break;
 				case 128:
-					*(address++) = *VICbgColor2;
-					*(address++) = *VICbgColor2;
+					*(address++) = VICbgColor2;
+					*(address++) = VICbgColor2;
 					break;
 				case 192:
 					*(address++) = foreColor;
@@ -166,8 +148,7 @@ void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned i
 
 
 void drawCharacterOctetSBM(unsigned int x, unsigned int y, byte data, unsigned int color0, unsigned int color1) {
-	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-                //VICforeColor[0] = color0;
+	if(y>=Y_MIN && y<Y_MAX) {
 		x-=X_MIN;
 		y=y-Y_MIN+100;
 
@@ -181,19 +162,54 @@ void drawCharacterOctetSBM(unsigned int x, unsigned int y, byte data, unsigned i
 	}
 }
 
-/*
-inline void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-		VICforeColor[0] = foreColor;
-		//drawPixelOctet(x-X_MIN,y-Y_MIN + 100,data);
-		drawPixelOctetC(x-X_MIN,y-Y_MIN + 100,data);
+
+void drawCharacterOctetMBM(unsigned int x, unsigned int y, byte data, unsigned int color0, unsigned int color1, unsigned int color2) {
+	if(y>=Y_MIN && y<Y_MAX) {
+		x-=X_MIN;
+		y=y-Y_MIN+100;
+
+		uint16_t* address = gaddress + (y*gwidth+x);
+                byte mask = 0b11000000;
+		int i;
+		for(i=4; i>0; i--) {
+			switch(data&mask) {
+				case 0:
+					*(address++) = VICbgColor0;
+					*(address++) = VICbgColor0;
+					break;
+				case 64:
+					*(address++) = color0;
+					*(address++) = color0;
+					break;
+				case 128:
+					*(address++) = color1;
+					*(address++) = color1;
+					break;
+				case 192:
+					*(address++) = color2;
+					*(address++) = color2;
+					break;
+			}
+			data = data<<2;
+		}
 	}
-}*/
+}
+
 
 inline void drawBorderOctet(unsigned int x, unsigned int y, unsigned int color) {
-	if(x>=X_MIN && x<X_MAX && y>=Y_MIN && y<Y_MAX) {
-		VICforeColor[0] = color;
-		drawForeColorOctet(x-X_MIN,y-Y_MIN + 100);
+	if(y>=Y_MIN && y<Y_MAX) {
+		x-=X_MIN;
+		y=y-Y_MIN+100;
+
+		uint16_t* address = gaddress + (y*gwidth+x);
+		*(address++) = color;
+		*(address++) = color;
+		*(address++) = color;
+		*(address++) = color;
+		*(address++) = color;
+		*(address++) = color;
+		*(address++) = color;
+		*(address++) = color;
 	}
 }
 
@@ -212,9 +228,9 @@ inline void updateRasterRegister() {
 
 
 /* Returns int 000-111 ie. 0-7 */
-inline byte getYScroll() {
+/*inline byte getYScroll() {
 	return(vicRegisters[0x11] & 7); // kolme alinta bittiä
-}
+}*/
 
 inline byte isDENbit() {
 	return(vicRegisters[0x11] & B5);
@@ -427,7 +443,7 @@ void vicCycle() {
 	//		soon as the DEN bit (register $d011, bit 4) is set (for more about the DEN
 	//		bit, see section 3.10.).
 	byte badLineCondition = 0;
-	if((currentRasterLine & 7)==getYScroll() && currentRasterLine>=0x30 && currentRasterLine<=0xf7 && displayEnabled) {
+	if((currentRasterLine & 7)==currentYScroll && currentRasterLine>=0x30 && currentRasterLine<=0xf7 && displayEnabled) {
 		badLineCondition = 1;
 
 		//The transition from idle to display state occurs as soon as there is a Bad
@@ -466,32 +482,44 @@ void vicCycle() {
 	// G-ACCESS
 	if(rasterline_bad[currentRLcycle][0].busUsage==RLBG) {
 		if(FLAG_STATE==STATE_DISPLAY) {
-			if(!borderVertFlip) {
+			if(!borderVertFlip && currentRLcycle>10 && currentRLcycle<59) {
 				switch(graphicsMode) {
 					case GM_MTM:
 						// Multicolor Text Mode 0/0/1
 						if(VML[VMLI] & 0b100000000000) {
-							drawCharacterOctetMTM(currentRLcycle*8+(vicRegisters[0x16]&7),
-                                                                        currentRasterLine,
-                                                                        vicMemRead(vicGetGAddress(VML[VMLI])),
-                                                                        colors[(VML[VMLI]>>8) & 0x7]);
+							drawCharacterOctetMTM(currentRLcycle*8+currentXScroll,
+									currentRasterLine,
+									vicMemRead(vicGetGAddress(VML[VMLI])),
+									colors[(VML[VMLI]>>8) & 0x7]);
 							break;
 						}
 						// else fall through to STM mode below
 					case GM_STM:
 						// Standard Text Mode 0/0/0
-						drawCharacterOctet(currentRLcycle*8+(vicRegisters[0x16]&7), 
+						drawCharacterOctet(currentRLcycle*8+currentXScroll, 
 									currentRasterLine, 
 									vicMemRead(vicGetGAddress(VML[VMLI])), 
 									colors[(VML[VMLI]>>8) & 0xf]);
 						break;
 					case GM_SBM:
 						// Standard Bitmap Mode 0/1/0
-						drawCharacterOctetSBM(currentRLcycle*8+(vicRegisters[0x16]&7), 
+						drawCharacterOctetSBM(currentRLcycle*8+currentXScroll, 
 									currentRasterLine, 
 									vicMemRead(vicGetGAddressSBM()), 
-									colors[(VML[VMLI]) & 0xf], colors[(VML[VMLI]>>4) & 0xf]);
+									colors[(VML[VMLI]) & 0xf],
+									colors[(VML[VMLI]>>4) & 0xf]);
 						break;
+					case GM_MBM:
+						// Multicolor Bitmap Mode 0/1/1
+						// poke53265,59    (norm 27)
+						// poke53270,216   (norm 200)
+						drawCharacterOctetMBM(currentRLcycle*8+currentXScroll,
+									currentRasterLine,
+									vicMemRead(vicGetGAddressSBM()),
+									colors[(VML[VMLI]) & 0xf],
+									colors[(VML[VMLI]>>4) & 0xf],
+									colors[(VML[VMLI]>>8) & 0xf]);
+                                                break;
 			
 
 				}
@@ -500,20 +528,20 @@ void vicCycle() {
 			VC++;
 			VMLI++;
 		}
-		else if(!borderVertFlip) {
+		else if(!borderVertFlip && currentRLcycle>10 && currentRLcycle<59) {
 			// fills the gap with bgcolor if yscrolling in 25 row mode (POKE53265,24( or 31))
 			// TODO: it seems, that in reality there should be weird black/bgcolor pattern
 			drawCharacterOctet(currentRLcycle*8, currentRasterLine, 0x0, colors[vicRegisters[0x20] & 0xf]);
 		}
 	}
 		
-	if(borderMainFlip) {
+	if(borderMainFlip && currentRLcycle>10 && currentRLcycle<59) {
+		// TODO: optimize, do not redraw borders if not needed
 		drawBorderOctet(currentRLcycle*8, currentRasterLine, colors[vicRegisters[0x20]&0xf]);
 	}
 
 
 	if(displayEnabled && currentRasterLine>=0x30 && currentRasterLine<=0xf7) {
-
 		// C-ACCESS
 		if(rasterline_bad[currentRLcycle][1].busUsage==RLBC && badLineCondition) {
 			word videomatrixaddress = vicGetCAddress();
@@ -530,31 +558,32 @@ void vicCycle() {
 void vic6569_writeByte(byte address, byte data) {
 	switch(address) {
 		case 0x11:    // screen control register #1
-			vicRegisters[address] = data;
+			currentYScroll = data & 0x7;
 			interruptRasterLine = (interruptRasterLine & 0xff) + ((data << 1) & 0x100);
 			if (data&B6) graphicsMode |= B2; else graphicsMode &= ~B2;  // BMM
 			if (data&B7) graphicsMode |= B3; else graphicsMode &= ~B3;  // ECM
-			return;
+			break;
 		case 0x12:    // interrupt rasterline 8 lowest bits
 			interruptRasterLine = (interruptRasterLine & 0x100) + data;
 			return;
 		case 0x16:    // screen control register #2
+			currentXScroll = data & 0x7;
 			if (data&B5) graphicsMode |= B1; else graphicsMode &= ~B1;    //MCM
 			break;
 		case 0x19:    // interrupt status register acknowledge
 			vicRegisters[address] = ~data;
 			return;
 		case 0x21:
-			*VICbgColor0 = colors[data & (B1+B2+B3+B4)];
+			VICbgColor0 = colors[data & 0xf];
 			break;
 		case 0x22:
-			*VICbgColor1 = colors[data & (B1+B2+B3+B4)];
+			VICbgColor1 = colors[data & 0xf];
 			break;
 		case 0x23:
-			*VICbgColor2 = colors[data & (B1+B2+B3+B4)];
+			VICbgColor2 = colors[data & 0xf];
 			break;
 		case 0x24:
-			*VICbgColor3 = colors[data & (B1+B2+B3+B4)];
+			VICbgColor3 = colors[data & 0xf];
 			break;
 
 	}
