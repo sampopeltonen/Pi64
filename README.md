@@ -9,15 +9,15 @@ ___Emulator starts instantly when the power is switched on.___|
 
 ### Current Status
 
-The project is a work in progress and **is not yet a fully functional C64 emulator**.
+The project is a work in progress and **is not yet fully functional C64 emulator**.
 
 Features so far:
 
-* CPU op-codes work almost 100% but not quite (problem with the V flag in SBC in decimal mode)
+* CPU logic works 99.8% (problem with the V flag in SBC in decimal mode)
 * Illegal op-codes work (according to a test suite)
 * Op-code cycle timing works (according to a test suite)
-* Interrupts work (interrupt sequence might have a small timing problem)
-* Borders work almost fully (problem is that in 38 column mode borders are off by 1 pixel to right)
+* Interrupts work (interrupt sequence might have a small timing problem but I'm not sure how to test that reliably)
+* Borders almost fully work (in 38 column mode borders are off by 1 pixel to the right)
 * Colors work (background, borders, characters...)
 * Screen X and Y scrolling work
 * 4/5 of valid VIC graphics modes work (ECM text mode missing)
@@ -29,13 +29,15 @@ Features so far:
 Some of the major things that do not work yet:
 
 * Sprites
-* Any way to load software, this is quite a big question mark as how to proceed with
+* Any way to load software, this is quite a big question mark as how to proceed with (Test suite programs are compiled inside the binary and can be fed into C64 memory by pressing F7)
 * joystick connections
 * Sound
 
+Possibility to connect real C64 cartridges to the Raspberry Pi would be ideal, but unfortunately it's not possible. To my understanding Raspberry Pi is too slow for the needed serial-parallel connection.
+
 ![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/C64KeyboardAdapter.jpg) |
 ----|
-___I have designed a small adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schema for the adapter here as soon as I have it drawn somehow.___ |
+___The adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schema for the adapter here as soon as I have it drawn somehow.___ |
 
 
 ### Compilation and installation
