@@ -1,31 +1,41 @@
 Pi64
 ====
 
-This project is about emulating Commodore 64 on a low-cost, card size computer, Raspberry Pi without any operating system on the machine. So it's running on "bare metal".
+This project is about emulating Commodore 64 on a very affordable, card sized computer, Raspberry Pi without any operating system on the machine. So it's running on "bare metal".
 
-![screenshot](https://raw.github.com/sampopeltonen/pi64/master/ScreenShot.png)|
+![screenshot](https://raw.github.com/sampopeltonen/pi64/master/docs/IMG_1678.jpg)|
 -------|
-___Nice thing with a program running on bare metal is that it starts instantly when you switch on the power.___|
+___Emulator starts instantly when the power is switched on.___|
 
 ### Current Status
 
 The project is a work in progress and **is not yet a fully functional C64 emulator**.
 
-The current status is that the machine boots up properly and is able to run at least simple basic programs. The default VIC text mode somewhat works, but it's still without borders.
+Features so far:
 
-I have designed a small adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schema for the adapter here as soon as I have it drawn somehow.
+* CPU op-codes work almost 100% but not quite (problem with the V flag in SBC in decimal mode)
+* Illegal op-codes work (according to a test suite)
+* Op-code cycle timing works (according to a test suite)
+* Interrupts work (interrupt sequence might have a small timing problem)
+* Borders work almost fully (problem is that in 38 column mode borders are off by 1 pixel to right)
+* Colors work (background, borders, characters...)
+* Screen X and Y scrolling work
+* 4/5 of valid VIC graphics modes work (ECM text mode missing)
+* VIC rasterline interrupts work
+* Most relevant parts of CIA chips work (timers, interrupts, i/o with keyboard)
+* Commodore 64 keyboard works through a self made serial-parallel adapter and through the CIA chip implementation
+* Emulation speed currently little bit faster than real time
 
-CIA chips are partly functional: timers somewhat work, interrupts based on timers are generated (and handled by the processsor) and input/output with the keyboard (through the adapter) works.
+Some of the major things that do not work yet:
 
-SID chip (sound) is out of the scope for any time soon.
+* Sprites
+* Any way to load software, this is quite a big question mark as how to proceed with
+* joystick connections
+* Sound
 
-VIC chip needs much additional work.
-
-Emulation speed is currently little bit faster than real-time, but there's still room for some optimization.
-
-![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/konehuone.png) |
+![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/C64KeyboardAdapter.jpg) |
 ----|
-___Commodore 64 keyboard connected to Raspberry Pi through the adapter. (Keyrah on the right has currently nothing to do with this project)___ |
+___I have designed a small adapter for connecting a real C64 keyboard to Raspberry Pi's GPIO pins. With the adapter only 4 of the Pi's GPIO pins are used for the connection. I'll add the schema for the adapter here as soon as I have it drawn somehow.___ |
 
 
 ### Compilation and installation
