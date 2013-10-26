@@ -73,10 +73,13 @@ byte frame=0;
 
 word interruptRasterLine=0;
 
+/*
 word VICbgColor0;
 word VICbgColor1;
 word VICbgColor2;
 word VICbgColor3;
+*/
+word VICbgColor[4];
 
 #define X_MIN 80
 #define X_MAX 474
@@ -98,7 +101,6 @@ byte graphicsMode = 0;
 uint32_t gwidth;
 uint16_t* gaddress;
 
-// for some reason emulation almost 10% slower in this function is inlined, why?
 void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
 	if(y>=Y_MIN && y<Y_MAX) {
 		x-=X_MIN;
@@ -107,7 +109,21 @@ void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int 
 		uint16_t* address = gaddress + (y*gwidth+x);
 		byte mask = 0b10000000;
 		while(mask>0) {
-			*address = (data&mask) ? foreColor : VICbgColor0;
+			*address = (data&mask) ? foreColor : VICbgColor[0];
+			address += 1;
+			mask = (mask >>1);
+		}
+	}
+}
+void drawCharacterOctetETM(unsigned int x, unsigned int y, byte data, unsigned int foreColor, unsigned int bgColor) {
+	if(y>=Y_MIN && y<Y_MAX) {
+		x-=X_MIN;
+		y=y-Y_MIN+100;
+
+		uint16_t* address = gaddress + (y*gwidth+x);
+		byte mask = 0b10000000;
+		while(mask>0) {
+			*address = (data&mask) ? foreColor : VICbgColor[bgColor];
 			address += 1;
 			mask = (mask >>1);
 		}
@@ -125,16 +141,16 @@ void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned i
 		for(i=4; i>0; i--) {
 			switch(data&mask) {
 				case 0:
-					*(address++) = VICbgColor0;
-					*(address++) = VICbgColor0;
+					*(address++) = VICbgColor[0];
+					*(address++) = VICbgColor[0];
 					break;
 				case 64:
-					*(address++) = VICbgColor1;
-					*(address++) = VICbgColor1;
+					*(address++) = VICbgColor[1];
+					*(address++) = VICbgColor[1];
 					break;
 				case 128:
-					*(address++) = VICbgColor2;
-					*(address++) = VICbgColor2;
+					*(address++) = VICbgColor[2];
+					*(address++) = VICbgColor[2];
 					break;
 				case 192:
 					*(address++) = foreColor;
@@ -174,8 +190,8 @@ void drawCharacterOctetMBM(unsigned int x, unsigned int y, byte data, unsigned i
 		for(i=4; i>0; i--) {
 			switch(data&mask) {
 				case 0:
-					*(address++) = VICbgColor0;
-					*(address++) = VICbgColor0;
+					*(address++) = VICbgColor[0];
+					*(address++) = VICbgColor[0];
 					break;
 				case 64:
 					*(address++) = color0;
@@ -227,15 +243,6 @@ inline void updateRasterRegister() {
 }
 
 
-/* Returns int 000-111 ie. 0-7 */
-/*inline byte getYScroll() {
-	return(vicRegisters[0x11] & 7); // kolme alinta bittiä
-}*/
-
-inline byte isDENbit() {
-	return(vicRegisters[0x11] & B5);
-}
-
 /*
 Address should be 0-$3fff because vic only has 14 address lines.
 Highest 2 bits are provided by CIA2 (pointing to bank 0-3).
@@ -273,7 +280,6 @@ inline byte vicMemRead(word address) {
 		// TODO: figure out should the color ram also be accessed here?
 		return(ret);
 	}
-	// read normally + highest bits from color ram
 	return(memReadByte(address));
 }
 
@@ -297,8 +303,7 @@ inline word vicGetGAddress(byte rootAddress) {
 	//	 +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 	//	 |CB13|CB12|CB11| D7 | D6 | D5 | D4 | D3 | D2 | D1 | D0 | RC2| RC1| RC0|
 	//	 +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-	word gaddress = ((vicRegisters[0x18] & (B2+B3+B4)) << 10) + (((word)rootAddress) << 3) + RC;
-	return(gaddress);
+	return(((vicRegisters[0x18] & (B2+B3+B4)) << 10) + (((word)rootAddress) << 3) + RC);
 }
 
 inline word vicGetGAddressSBM() {
@@ -308,8 +313,7 @@ inline word vicGetGAddressSBM() {
 	//	+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 	//	|CB13| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0| RC2| RC1| RC0|
 	//	+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-	word gaddress = ((vicRegisters[0x18] & (B4)) << 10) + (VC << 3) + RC;
-	return(gaddress);
+	return(((vicRegisters[0x18] & (B4)) << 10) + (VC << 3) + RC);
 }
 
 inline int isYOnVerticalTopComparisonValueAndDenSet() {
@@ -358,7 +362,6 @@ void vicCycle() {
 
 
 	if(currentRLcycle==0) { // beginning of new line
-		//currentRLcycle=0;
 		currentRasterLine++;
 		if(currentRasterLine>=312) {
 			currentRasterLine = 0;
@@ -384,7 +387,6 @@ void vicCycle() {
 			}
 			if(vicRegisters[0x19] & B1) {
 				// TODO: what to do to bit #8 of the interrupt status register ???
-				//printf("vic irq");
 				mos_irq();
 			}
 			
@@ -399,7 +401,8 @@ void vicCycle() {
 		//and the DEN bit in register $d011 is set, the vertical border flip flop is reset.
 		if(isYOnVerticalTopComparisonValueAndDenSet()) borderVertFlip = 0;
 			
-	}
+	} // end of currentRLcycle==0
+
 	/*
 	Borders cont.
 	4. If the X coordinate reaches the left comparison value and the Y
@@ -425,7 +428,7 @@ void vicCycle() {
 
 	// is display enabled (DEN bit)
 	if(currentRasterLine==0x30 && displayEnabled==0) {
-		displayEnabled = isDENbit();
+		displayEnabled = (vicRegisters[0x11] & B5);
 	}
 
 
@@ -511,8 +514,8 @@ void vicCycle() {
 						break;
 					case GM_MBM:
 						// Multicolor Bitmap Mode 0/1/1
-						// poke53265,59    (norm 27)
-						// poke53270,216   (norm 200)
+						// poke53265,27->59
+						// poke53270,200->216
 						drawCharacterOctetMBM(currentRLcycle*8+currentXScroll,
 									currentRasterLine,
 									vicMemRead(vicGetGAddressSBM()),
@@ -520,7 +523,15 @@ void vicCycle() {
 									colors[(VML[VMLI]>>4) & 0xf],
 									colors[(VML[VMLI]>>8) & 0xf]);
                                                 break;
-			
+					case GM_ETM:
+						// ECM Text Mode 1/0/0
+						// poke 53265,27->91
+						drawCharacterOctetETM(currentRLcycle*8+currentXScroll,
+									currentRasterLine,
+									vicMemRead(vicGetGAddress(VML[VMLI]&0b111111)),
+									colors[(VML[VMLI]>>8) & 0xf],
+									(VML[VMLI]>>6)&0b11);
+                                                break;
 
 				}
 			}
@@ -536,7 +547,7 @@ void vicCycle() {
 	}
 		
 	if(borderMainFlip && currentRLcycle>10 && currentRLcycle<59) {
-		// TODO: optimize, do not redraw borders if not needed
+		// TODO: major optimization awaits.. do not redraw borders if not needed
 		drawBorderOctet(currentRLcycle*8, currentRasterLine, colors[vicRegisters[0x20]&0xf]);
 	}
 
@@ -574,16 +585,16 @@ void vic6569_writeByte(byte address, byte data) {
 			vicRegisters[address] = ~data;
 			return;
 		case 0x21:
-			VICbgColor0 = colors[data & 0xf];
+			VICbgColor[0] = colors[data & 0xf];
 			break;
 		case 0x22:
-			VICbgColor1 = colors[data & 0xf];
+			VICbgColor[1] = colors[data & 0xf];
 			break;
 		case 0x23:
-			VICbgColor2 = colors[data & 0xf];
+			VICbgColor[2] = colors[data & 0xf];
 			break;
 		case 0x24:
-			VICbgColor3 = colors[data & 0xf];
+			VICbgColor[3] = colors[data & 0xf];
 			break;
 
 	}
