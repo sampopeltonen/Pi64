@@ -20,7 +20,7 @@ Features so far:
 * Borders almost fully work (in 38 column mode borders are off by 1 pixel to the right)
 * Colors work (background, borders, characters...)
 * Screen X and Y scrolling work
-* 4/5 of valid VIC graphics modes work (ECM text mode missing)
+* All 5 valid VIC graphics modes work
 * VIC rasterline interrupts work
 * Most relevant parts of CIA chips work (timers, interrupts, i/o with keyboard)
 * Commodore 64 keyboard works through a self made serial-parallel adapter and through the CIA chip implementation
@@ -28,12 +28,12 @@ Features so far:
 
 Some of the major things that do not work yet:
 
-* Sprites
+* Sprite graphics
 * Any way to load software, this is quite a big question mark as how to proceed with (Test suite programs are compiled inside the binary and can be fed into C64 memory by pressing F7)
 * joystick connections
 * Sound
 
-Possibility to connect real C64 cartridges to the Raspberry Pi would be ideal, but unfortunately it's not possible. To my understanding Raspberry Pi is too slow for the needed serial-parallel connection.
+Possibility to connect real C64 cartridges to the Raspberry Pi would be ideal, but unfortunately it's not possible. Raspberry Pi is too slow for the needed serial-parallel connection and there is over 40 lines to cartridge.
 
 ![konehuone](https://raw.github.com/sampopeltonen/pi64/master/docs/C64KeyboardAdapter.jpg) |
 ----|
