@@ -15,8 +15,9 @@
 #include "rasterlinetiming.h"
 #include "stdlibtools.h"
 #include "C64Keyboard.h"
+#include "cathoderay.h"
 
-extern uint32_t* graphicsAddress;
+//extern uint32_t* graphicsAddress;
 
 extern byte kernalROM[];
 extern byte basicROM[];
@@ -73,19 +74,6 @@ byte frame=0;
 
 word interruptRasterLine=0;
 
-/*
-word VICbgColor0;
-word VICbgColor1;
-word VICbgColor2;
-word VICbgColor3;
-*/
-word VICbgColor[4];
-
-#define X_MIN 80
-#define X_MAX 474
-#define Y_MIN 25
-#define Y_MAX 280
-
 // Valid graphics modes (value from bits ECM BMM MCM)
 #define GM_STM 0
 #define GM_MTM 1
@@ -95,144 +83,11 @@ word VICbgColor[4];
 
 byte graphicsMode = 0;
 
-
-/* TODO: move this framebuffer stuff to it's own file */
-
-uint32_t gwidth;
-uint16_t* gaddress;
-
-void drawCharacterOctet(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-	if(y>=Y_MIN && y<Y_MAX) {
-		x-=X_MIN;
-		y=y-Y_MIN+100;
-
-		uint16_t* address = gaddress + (y*gwidth+x);
-		byte mask = 0b10000000;
-		while(mask>0) {
-			*address = (data&mask) ? foreColor : VICbgColor[0];
-			address += 1;
-			mask = (mask >>1);
-		}
-	}
-}
-void drawCharacterOctetETM(unsigned int x, unsigned int y, byte data, unsigned int foreColor, unsigned int bgColor) {
-	if(y>=Y_MIN && y<Y_MAX) {
-		x-=X_MIN;
-		y=y-Y_MIN+100;
-
-		uint16_t* address = gaddress + (y*gwidth+x);
-		byte mask = 0b10000000;
-		while(mask>0) {
-			*address = (data&mask) ? foreColor : VICbgColor[bgColor];
-			address += 1;
-			mask = (mask >>1);
-		}
-	}
-}
-
-void drawCharacterOctetMTM(unsigned int x, unsigned int y, byte data, unsigned int foreColor) {
-        if(y>=Y_MIN && y<Y_MAX) {
-                x-=X_MIN;
-                y=y-Y_MIN+100;
-
-                uint16_t* address = gaddress + (y*gwidth+x);
-                byte mask = 0b11000000;
-		int i;
-		for(i=4; i>0; i--) {
-			switch(data&mask) {
-				case 0:
-					*(address++) = VICbgColor[0];
-					*(address++) = VICbgColor[0];
-					break;
-				case 64:
-					*(address++) = VICbgColor[1];
-					*(address++) = VICbgColor[1];
-					break;
-				case 128:
-					*(address++) = VICbgColor[2];
-					*(address++) = VICbgColor[2];
-					break;
-				case 192:
-					*(address++) = foreColor;
-					*(address++) = foreColor;
-					break;
-			}
-			data = data<<2;
-		}
-	}
-}
-
-
-void drawCharacterOctetSBM(unsigned int x, unsigned int y, byte data, unsigned int color0, unsigned int color1) {
-	if(y>=Y_MIN && y<Y_MAX) {
-		x-=X_MIN;
-		y=y-Y_MIN+100;
-
-		uint16_t* address = gaddress + (y*gwidth+x);
-		byte mask = 0b10000000;
-		while(mask>0) {
-			*address = (data&mask) ? color1 : color0;
-			address += 1;
-			mask = (mask >>1);
-		}
-	}
-}
-
-
-void drawCharacterOctetMBM(unsigned int x, unsigned int y, byte data, unsigned int color0, unsigned int color1, unsigned int color2) {
-	if(y>=Y_MIN && y<Y_MAX) {
-		x-=X_MIN;
-		y=y-Y_MIN+100;
-
-		uint16_t* address = gaddress + (y*gwidth+x);
-                byte mask = 0b11000000;
-		int i;
-		for(i=4; i>0; i--) {
-			switch(data&mask) {
-				case 0:
-					*(address++) = VICbgColor[0];
-					*(address++) = VICbgColor[0];
-					break;
-				case 64:
-					*(address++) = color0;
-					*(address++) = color0;
-					break;
-				case 128:
-					*(address++) = color1;
-					*(address++) = color1;
-					break;
-				case 192:
-					*(address++) = color2;
-					*(address++) = color2;
-					break;
-			}
-			data = data<<2;
-		}
-	}
-}
-
-
-inline void drawBorderOctet(unsigned int x, unsigned int y, unsigned int color) {
-	if(y>=Y_MIN && y<Y_MAX) {
-		x-=X_MIN;
-		y=y-Y_MIN+100;
-
-		uint16_t* address = gaddress + (y*gwidth+x);
-		*(address++) = color;
-		*(address++) = color;
-		*(address++) = color;
-		*(address++) = color;
-		*(address++) = color;
-		*(address++) = color;
-		*(address++) = color;
-		*(address++) = color;
-	}
-}
-
-/* end framebuffer stuff */
-
-
-
+// Internal Sprite registers
+unsigned int sDMA[8];		//  0/1 
+unsigned int sDISPLAY[8];	//  0/1
+byte sMCBASE[8];		//  6 bits
+byte sMC[8];			//  6 bits
 
 
 
@@ -464,6 +319,35 @@ void vicCycle() {
 		if(badLineCondition) RC = 0;
 	}
 
+
+	// Sprite handling
+	if(currentRLcycle==54) {
+		// check if any sprite is starting on next line
+		/*
+		3. In the first phases of cycle 55 and 56, the VIC checks for every sprite
+		   if the corresponding MxE bit in register $d015 is set and the Y
+		   coordinate of the sprite (odd registers $d001-$d00f) match the lower 8
+		   bits of RASTER. If this is the case and the DMA for the sprite is still
+		   off, the DMA is switched on, MCBASE is cleared, and if the MxYE bit is
+		   set the expansion flip flip is reset.
+		*/
+		unsigned int b = 1;
+		unsigned int r = 1;
+		unsigned int s = 0; 
+		while(b<=0b10000000) {
+			if((vicRegisters[0x15] & b) && (vicRegisters[r] == vicRegisters[0x12]) && sDMA[s]==0) {
+				sDMA[s]=1;
+				sMCBASE[s] = 0;
+				// TODO: expansion
+			}
+			b = b<<1;
+			r += 2;
+			s++;
+		}
+	}
+
+
+
 	//	In the first phase of cycle 58, the VIC checks if RC=7. If so, the video
 	//	   logic goes to idle state and VCBASE is loaded from VC (VC->VCBASE). If
 	//	   the video logic is in display state afterwards (this is always the case
@@ -479,6 +363,28 @@ void vicCycle() {
 			RC=0;
 		}
 		else RC++;
+
+
+		// Sprite handling
+		/*
+		4. In the first phase of cycle 58, the MC of every sprite is loaded from
+		   its belonging MCBASE (MCBASE->MC) and it is checked if the DMA for the
+		   sprite is turned on and the Y coordinate of the sprite matches the lower
+		   8 bits of RASTER. If this is the case, the display of the sprite is
+		   turned on.  */
+		unsigned int s = 0;
+		unsigned int r = 1;
+		while(s<8) {
+			sMC[s] = sMCBASE[s];
+			// TODO: adding this vicRegisters comparison caused 10% increase in slowness
+			if(sDMA[s] && (vicRegisters[r] == vicRegisters[0x12])) {
+				sDISPLAY[s]=1;
+			}
+			s++;
+			r+=2;
+		}
+		
+
 	}
 
 
@@ -622,9 +528,8 @@ word drawRGB24toRGB565(byte r, byte g, byte b) {
 
 void vic6569_init() {
 
-        gwidth = graphicsAddress[0];
-        gaddress = (uint16_t*)graphicsAddress[8];
-
+	cathoderay_init();
+	
 	int i;
 	for(i=0; i<47; i++) {
 		// TODO: what are the real initial values?

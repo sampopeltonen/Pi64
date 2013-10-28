@@ -26,6 +26,7 @@ arm-none-eabi-gcc $CC_OPTS -c src/ram.c -o obj/ram.o
 arm-none-eabi-gcc $CC_OPTS -c src/MOS6510.c -o obj/MOS6510.o
 arm-none-eabi-gcc $CC_OPTS -c src/rasterlinetiming.c -o obj/rasterlinetiming.o
 arm-none-eabi-gcc $CC_OPTS -c src/VIC6569.c -o obj/VIC6569.o
+arm-none-eabi-gcc $CC_OPTS -c src/cathoderay.c -o obj/cathoderay.o
 #arm-none-eabi-gcc $CC_OPTS -c src/graphicstools.c -o obj/graphicstools.o
 arm-none-eabi-gcc $CC_OPTS -c src/stdlibtools.c -o obj/stdlibtools.o
 arm-none-eabi-gcc $CC_OPTS -c src/C64Keyboard.c -o obj/C64Keyboard.o
@@ -45,6 +46,7 @@ obj/ioregarea.o \
 obj/ram.o \
 obj/MOS6510.o \
 obj/rasterlinetiming.o \
+obj/cathoderay.o \
 obj/VIC6569.o \
 obj/stdlibtools.o \
 obj/C64KeyboardPins.o \
